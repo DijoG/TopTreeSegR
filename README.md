@@ -10,9 +10,9 @@
 TopTreeSegR produces clean, structural point clouds representing tree architecture using alpha-complex simplification. This removes redundant points while perfectly preserving topological structure, enabling fast, accurate ecological analysis without foliage noise.
 
 
-# 🎯 Quick Start
+## 🎯 Quick Start
 
-## Installation
+### Installation
 ```r
 # Install from GitHub
 remotes::install_github("DijoG/DiscreteMorseR")
@@ -23,7 +23,7 @@ remotes::install_github("yourusername/TopTreeSegR")
 library(TopTreeSegR)
 ```
 
-## One-Line Segmentation
+### One-Line Segmentation
 ```r
 library(lidR)
 trees <- lidR::readLAS(trees.las)
@@ -40,7 +40,7 @@ plot_TTS_3d(result)
 # Access individual trees
 trees_list <- split(result$points, result$segmentation)
 ```
-# ⚡ Performance
+## ⚡ Performance
 
 ```r
 TopTreeSegR::benchmark_TTS(result)
@@ -61,9 +61,9 @@ Seeds detected: 5
 Processing rate: 7771.15 points/second
 ```
 
-# 🛠️ Advanced Usage
+## 🛠️ Advanced Usage
 
-## Custom Parameters
+### Custom Parameters
 
 ```r
 # Fine-tune for your forest type
@@ -76,7 +76,7 @@ tts <- TopTreeSegR::TTS_segmentation(
 )
 ```
 
-## Validation & Quality Control
+### Validation & Quality Control
 ```r
 # Check segmentation quality
 validation <- validate_segmentation(tts)
@@ -86,7 +86,7 @@ tree_points <- split(tts$points, tts$segmentation)
 tree_1 <- tree_points[[1]]  # First tree point cloud
 ```
 
-## Results
+### Results
 ```r
 # 2D projections
 plot_TTS_2d(result, projection = "XY")  # Top-down view
@@ -100,9 +100,9 @@ plot_TTS_3d(tts)
 | <img src="https://raw.githubusercontent.com/DijoG/storage/main/TTSR/TTSR01.png" width="400"> | <img src="https://raw.githubusercontent.com/DijoG/storage/main/TTSR/TTSR03.png" width="400"> |
 | <img src="https://raw.githubusercontent.com/DijoG/storage/main/TTSR/TTSR02.png" width="400"> | <img src="https://raw.githubusercontent.com/DijoG/storage/main/TTSR/TTSR04.png" width="400"> |
 
-# 🔬 How It Works
+## 🔬 How It Works
 
-# The Magic of Discrete Morse Theory
+### The Magic of Discrete Morse Theory
 
 `TopTreeSegR` uses mathematical topology to understand tree structure:
 
@@ -114,7 +114,7 @@ plot_TTS_3d(tts)
 5. 🚀 Label Propagation - Grow trees from seeds using gradient flow
 ```
 
-# 🏗️ Architecture
+## 🏗️ Architecture
 
 ```text
 Raw Points → Alpha-Complex → Morse Theory → Tree Segmentation
@@ -123,7 +123,7 @@ Raw Points → Alpha-Complex → Morse Theory → Tree Segmentation
                           points only     structure
 ```
 
-# Key Features
+## Key Features
 
 ```text
 ⚡ Ultra-Fast: RcppArmadillo backend with parallel processing
