@@ -17,7 +17,7 @@ TopTreeSegR produces clean, structural point clouds representing tree architectu
 # Install from GitHub
 remotes::install_github("DijoG/DiscreteMorseR")
 remotes::install_github("stla/AlphaHull3D") 
-remotes::install_github("yourusername/TopTreeSegR")
+remotes::install_github("DijoG/TopTreeSegR")
 
 # Load the package
 library(TopTreeSegR)
