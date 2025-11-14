@@ -1,0 +1,79 @@
+[
+    {
+        "file": "D://TopTreeSegR/src/TopTreeSeg_GradientFlow.cpp",
+        "file_last_write": 1763034601.0,
+        "definitions": [
+            {
+                "usr": "c:@S@MinimaGraph",
+                "kind": 3,
+                "parent_name": "",
+                "name": "MinimaGraph",
+                "file": "D://TopTreeSegR/src/TopTreeSeg_GradientFlow.cpp",
+                "line": 14,
+                "column": 8,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@split_string#&1$@N@std@N@__cxx11@S@basic_string>#C#$@N@std@S@char_traits>#C#$@N@std@S@allocator>#C#C#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "split_string(const std::string &, char)",
+                "file": "D://TopTreeSegR/src/TopTreeSeg_GradientFlow.cpp",
+                "line": 20,
+                "column": 33,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@fast_stoi#&1$@N@std@N@__cxx11@S@basic_string>#C#$@N@std@S@char_traits>#C#$@N@std@S@allocator>#C#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "fast_stoi(const std::string &)",
+                "file": "D://TopTreeSegR/src/TopTreeSeg_GradientFlow.cpp",
+                "line": 31,
+                "column": 12,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@is_minimum_optimized#I#&1$@N@std@S@unordered_set>#I#$@N@std@S@hash>#I#$@N@std@S@equal_to>#I#$@N@std@S@allocator>#I#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "is_minimum_optimized(int, const std::unordered_set<int> &)",
+                "file": "D://TopTreeSegR/src/TopTreeSeg_GradientFlow.cpp",
+                "line": 42,
+                "column": 6,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@precompute_gradient_maps#$@N@Rcpp@S@Vector>#VI16#@N@Rcpp@ST>1#T@PreserveStorage#&$@N@std@S@unordered_map>#I#$@N@std@S@vector>#I#$@N@std@S@allocator>#I#$@N@std@S@hash>#I#$@N@std@S@equal_to>#I#$@N@std@S@allocator>#$@N@std@S@pair>#1I#S3_#&$@N@std@S@unordered_set>#I#S5_#S6_#S4_#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "precompute_gradient_maps(Rcpp::CharacterVector, std::unordered_map<int, std::vector<int>> &, std::unordered_set<int> &)",
+                "file": "D://TopTreeSegR/src/TopTreeSeg_GradientFlow.cpp",
+                "line": 47,
+                "column": 6,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@follow_gradient_to_minimum_optimized#I#&1$@N@std@S@unordered_map>#I#$@N@std@S@vector>#I#$@N@std@S@allocator>#I#$@N@std@S@hash>#I#$@N@std@S@equal_to>#I#$@N@std@S@allocator>#$@N@std@S@pair>#1I#S2_#&1$@N@std@S@unordered_set>#I#S4_#S5_#S3_#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "follow_gradient_to_minimum_optimized(int, const std::unordered_map<int, std::vector<int>> &, const std::unordered_set<int> &)",
+                "file": "D://TopTreeSegR/src/TopTreeSeg_GradientFlow.cpp",
+                "line": 82,
+                "column": 5,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@compute_minima_saddle_graph_optimized#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#$@N@arma@S@Mat>#d#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "compute_minima_saddle_graph_optimized(Rcpp::List, arma::mat)",
+                "file": "D://TopTreeSegR/src/TopTreeSeg_GradientFlow.cpp",
+                "line": 110,
+                "column": 6,
+                "hidden": false
+            }
+        ],
+        "hidden": false
+    }
+]
