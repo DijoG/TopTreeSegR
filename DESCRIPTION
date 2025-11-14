@@ -10,6 +10,7 @@ Description: Ultra-fast topology-based tree segmentation from LiDAR point clouds
 License: MIT
 URL: https://github.com/DijoG/TopTreeSegR
 BugReports: https://github.com/DijoG/TopTreeSegR/issues
+Encoding: UTF-8
 Imports: 
     Rcpp (>= 1.0.10),
     dbscan,
