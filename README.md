@@ -35,7 +35,7 @@ result <- TopTreeSegR::TTS_segmentation(trees)
 print(result)  
 
 # Visualize the topological segmentation
-plot_TTS_3d(result)
+TopTreeSegR::plot_TTS_3d(result)
 
 # Access individual trees
 trees_list <- split(result$points, result$segmentation)
@@ -79,7 +79,7 @@ tts <- TopTreeSegR::TTS_segmentation(
 ### Validation & Quality Control
 ```r
 # Check segmentation quality
-validation <- validate_segmentation(tts)
+validation <- TopTreeSegR::validate_segmentation(tts)
 
 # Extract individual trees
 tree_points <- split(tts$points, tts$segmentation)
@@ -89,11 +89,11 @@ tree_1 <- tree_points[[1]]  # First tree point cloud
 ### Results
 ```r
 # 2D projections
-plot_TTS_2d(result, projection = "XY")  # Top-down view
-plot_TTS_2d(result, projection = "XZ")  # Side view
+TopTreeSegR::plot_TTS_2d(result, projection = "XY")  # Top-down view
+TopTreeSegR::plot_TTS_2d(result, projection = "XZ")  # Side view
 
 # 3D interactive plot
-plot_TTS_3d(tts)
+TopTreeSegR::plot_TTS_3d(tts)
 ```
 | Input Point Cloud | Segmented Trees |
 |:---:|:---:|
