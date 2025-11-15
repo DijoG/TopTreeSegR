@@ -44,7 +44,7 @@ trees_list <- split(result$points, result$segmentation)
 ## ⚡ Performance
 
 ```r
-TopTreeSegR::benchmark_TTS(result)
+TopTreeSegR::benchmark_TTS(trees)
 ```
 ```text
 === BENCHMARK RESULTS ===
