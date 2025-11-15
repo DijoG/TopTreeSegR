@@ -70,8 +70,8 @@ Processing rate: 7771.15 points/second
 # Fine-tune for your forest type
 tts <- TopTreeSegR::TTS_segmentation(
   lasdf = trees,
-  alpha = 0.1,          # Alpha-complex parameter
-  clip_height = 1.5,    # Stem detection height
+  alpha = .1,           # Alpha-complex parameter
+  clip_height = .5,     # Max stem detection height
   max_distance = 2.0,   # Minima connectivity
   cores = 12            # Parallel processing
 )
