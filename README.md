@@ -1,8 +1,9 @@
 # TopTreeSegR - Ultra-Fast Topological Tree Segmentation
 
-![R](https://img.shields.io/badge/R-%2764?style=for-the-badge&logo=r&logoColor=white)
+![R](https://img.shields.io/badge/R-%2764?style=for-the-badge&logo=r&logoColor=grey)
 ![LiDAR](https://img.shields.io/badge/LiDAR-Tree%20Segmentation-green?style=for-the-badge)
 ![Topology](https://img.shields.io/badge/Topology-Discrete%20Morse%20Theory-blue?style=for-the-badge)
+![C++](https://img.shields.io/badge/C++-RcppArmadillo-blue?style=for-the-badge&logo=cplusplus)
 ![Development](https://img.shields.io/badge/Development-Active-brightgreen?style=for-the-badge)
 
 **Blazing-fast individual tree segmentation from terrestrial LiDAR point clouds using Discrete Morse Theory and RcppArmadillo.**
