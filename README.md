@@ -1,6 +1,6 @@
 # TopTreeSegR - Ultra-Fast Topological Tree Segmentation
 
-![R](https://img.shields.io/badge/R-%2764?style=for-the-badge&logo=r&logoColor=grey)
+![R](https://img.shields.io/badge/%2764?style=for-the-badge&logo=r&logoColor=grey)
 ![LiDAR](https://img.shields.io/badge/LiDAR-green?style=for-the-badge)
 ![Topology](https://img.shields.io/badge/Topology-Discrete%20Morse%20Theory-blue?style=for-the-badge)
 ![C++](https://img.shields.io/badge/C++-RcppArmadillo-blue?style=for-the-badge&logo=cplusplus)
