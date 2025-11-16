@@ -385,3 +385,169 @@ List build_minima_connectivity_spatial_cpp(const arma::uvec& minima,
   
   return adjacency;
 }
+
+// NEW 
+// Find previous vertex in gradient flow (helper function)
+arma::uword find_previous_vertex_cpp(const std::vector<std::string>& vector_field, 
+                                     arma::uword current_vertex) {
+  for (const auto& line : vector_field) {
+    size_t colon_pos = line.find(':');
+    if (colon_pos == std::string::npos) continue;
+    
+    std::string left = line.substr(0, colon_pos);
+    std::string right = line.substr(colon_pos + 1);
+    
+    std::vector<arma::uword> left_verts = parse_simplex_vertices_cpp(left);
+    std::vector<arma::uword> right_verts = parse_simplex_vertices_cpp(right);
+    
+    // Look for vertex->edge pairs where edge contains current_vertex
+    if (left_verts.size() == 1 && right_verts.size() == 2) {
+      // Check if current_vertex is in the edge
+      if (right_verts[0] == current_vertex || right_verts[1] == current_vertex) {
+        return left_verts[0];  // Return the source vertex
+      }
+    }
+  }
+  return 0;  // Not found
+}
+
+// Build minima connectivity from 1-saddles (Paper's exact method)
+// [[Rcpp::export]]
+List build_minima_connectivity_from_saddles_cpp(const std::vector<std::string>& critical_simplices,
+                                                const std::vector<std::string>& vector_field,
+                                                const arma::uvec& minima) {
+  arma::uword n_minima = minima.n_elem;
+  std::vector<std::vector<arma::uword>> adjacency(n_minima);
+  
+  // Step 1: Extract 1-saddles (critical edges)
+  std::vector<std::vector<arma::uword>> saddles;
+  
+  for (const auto& simplex_str : critical_simplices) {
+    std::vector<arma::uword> vertices = parse_simplex_vertices_cpp(simplex_str);
+    
+    // 1-saddles are edges (2 vertices)
+    if (vertices.size() == 2) {
+      saddles.push_back(vertices);
+    }
+  }
+  
+  Rcpp::Rcout << "  [C++] Found " << saddles.size() << " 1-saddles" << std::endl;
+  
+  // Step 2: For each saddle, find connected minima via V-paths
+  for (const auto& saddle : saddles) {
+    std::vector<arma::uword> connected_minima_indices;
+    
+    // For each vertex in the saddle, follow V-path to find minima
+    for (arma::uword saddle_vertex : saddle) {
+      arma::uword current_vertex = saddle_vertex;
+      std::unordered_set<arma::uword> visited;
+      
+      while (true) {
+        // Check if current vertex is a minimum
+        arma::uvec min_match = find(minima == current_vertex);
+        if (min_match.n_elem > 0) {
+          connected_minima_indices.push_back(min_match(0));
+          break;
+        }
+        
+        // Avoid infinite loops
+        if (visited.find(current_vertex) != visited.end()) break;
+        visited.insert(current_vertex);
+        
+        // Find the vertex that flows TO this one (reverse gradient)
+        arma::uword next_vertex = find_previous_vertex_cpp(vector_field, current_vertex);
+        if (next_vertex == 0) break;  // Not found
+        
+        current_vertex = next_vertex;
+      }
+    }
+    
+    // Remove duplicates and connect minima found through this saddle
+    std::sort(connected_minima_indices.begin(), connected_minima_indices.end());
+    connected_minima_indices.erase(
+      std::unique(connected_minima_indices.begin(), connected_minima_indices.end()),
+      connected_minima_indices.end()
+    );
+    
+    // Connect all minima found through this saddle (if at least 2)
+    if (connected_minima_indices.size() >= 2) {
+      for (size_t i = 0; i < connected_minima_indices.size(); i++) {
+        for (size_t j = i + 1; j < connected_minima_indices.size(); j++) {
+          arma::uword idx1 = connected_minima_indices[i];
+          arma::uword idx2 = connected_minima_indices[j];
+          
+          // Add bidirectional connection
+          if (std::find(adjacency[idx1].begin(), adjacency[idx1].end(), idx2) == adjacency[idx1].end()) {
+            adjacency[idx1].push_back(idx2);
+          }
+          if (std::find(adjacency[idx2].begin(), adjacency[idx2].end(), idx1) == adjacency[idx2].end()) {
+            adjacency[idx2].push_back(idx1);
+          }
+        }
+      }
+    }
+  }
+  
+  // Convert to R list
+  List adjacency_r(n_minima);
+  for (arma::uword i = 0; i < n_minima; i++) {
+    adjacency_r[i] = arma::uvec(adjacency[i]);
+  }
+  
+  return adjacency_r;
+}
+
+// Optimized label propagation with priority queue 
+// [[Rcpp::export]]
+arma::uvec propagate_labels_minima_graph_cpp(const List& minima_graph,
+                                             const arma::uvec& seed_indices,
+                                             const arma::uvec& seed_labels,
+                                             const arma::vec& elevations,
+                                             arma::uword n_minima) {
+  arma::uvec labels = zeros<arma::uvec>(n_minima);
+  
+  // Initialize seed labels
+  for (arma::uword i = 0; i < seed_indices.n_elem; i++) {
+    if (seed_indices(i) < n_minima) {
+      labels(seed_indices(i)) = seed_labels(i);
+    }
+  }
+  
+  // Priority queue: (elevation, minima_index) - lowest elevation first
+  std::priority_queue<std::pair<double, arma::uword>, 
+                      std::vector<std::pair<double, arma::uword>>,
+                      std::greater<std::pair<double, arma::uword>>> pq;
+  
+  // Initialize queue with seeds
+  for (arma::uword i = 0; i < seed_indices.n_elem; i++) {
+    if (seed_indices(i) < n_minima) {
+      double elev = elevations(seed_indices(i));
+      pq.push(std::make_pair(elev, seed_indices(i)));
+    }
+  }
+  
+  // Process queue
+  while (!pq.empty()) {
+    auto current = pq.top();
+    pq.pop();
+    
+    // Remove the unused variable - just use the index
+    arma::uword current_idx = current.second;
+    arma::uword current_label = labels(current_idx);
+    
+    // Get neighbors from minima graph
+    arma::uvec neighbors = minima_graph[current_idx];
+    
+    for (arma::uword j = 0; j < neighbors.n_elem; j++) {
+      arma::uword neighbor_idx = neighbors(j);
+      
+      if (labels(neighbor_idx) == 0) {  // Unlabeled
+        labels(neighbor_idx) = current_label;
+        double neighbor_elev = elevations(neighbor_idx);
+        pq.push(std::make_pair(neighbor_elev, neighbor_idx));
+      }
+    }
+  }
+  
+  return labels;
+}
