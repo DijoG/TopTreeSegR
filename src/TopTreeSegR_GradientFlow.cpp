@@ -245,7 +245,7 @@ List parse_gradient_network_fast(const std::vector<std::string>& vector_field, a
   );
 }
 
-// Ultra-fast ascending regions 
+// Ultra-fast ascending regions - FIXED VERSION
 // [[Rcpp::export]]
 arma::uvec compute_ascending_regions_fast(const List& gradient_network, 
                                           const arma::uvec& minima, 
@@ -263,7 +263,7 @@ arma::uvec compute_ascending_regions_fast(const List& gradient_network,
   for (arma::uword min_idx = 0; min_idx < minima_1based.n_elem; min_idx++) {
     arma::uword min_vertex = minima_1based(min_idx);
     
-    // Only process if this minimum hasn't been assigned yet
+    // Only process if this minimum has not been assigned yet
     if (ascending_regions(min_vertex - 1) == 0) {
       std::queue<arma::uword> queue;
       queue.push(min_vertex);
