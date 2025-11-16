@@ -101,8 +101,8 @@ TTS_segmentation <- function(lasdf, alpha = 0.1, clip_height = 0.5,
   
   # Step 3: ULTRA-FAST gradient flow with Armadillo
   message("3. Building ULTRA-FAST gradient flow...\n")
-  gradient_flow = build_gradient_flow_ultra_paper(morse_complex, mesh$vertices, 
-                                                  max_distance, grid_size)
+  gradient_flow = build_gradient_flow(morse_complex, mesh$vertices, 
+                                      ax_distance, grid_size)
   
   # Step 4: Detect tree seeds
   message("4. Detecting tree seeds...\n")
@@ -131,7 +131,7 @@ TTS_segmentation <- function(lasdf, alpha = 0.1, clip_height = 0.5,
 #' Build Ultra-Fast Gradient Flow
 #' 
 #' @keywords internal
-build_gradient_flow_ultra <- function(morse_complex, vertices, max_distance = 2.0, grid_size = 5.0) {
+build_gradient_flow <- function(morse_complex, vertices, max_distance = 2.0, grid_size = 5.0) {
   message("  Building ULTRA-FAST gradient flow with Armadillo...\n")
   
   # Extract minima using C++ implementation
