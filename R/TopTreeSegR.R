@@ -102,7 +102,7 @@ TTS_segmentation <- function(lasdf, alpha = 0.1, clip_height = 0.5,
   # Step 3: ULTRA-FAST gradient flow with Armadillo
   message("3. Building ULTRA-FAST gradient flow...\n")
   gradient_flow = build_gradient_flow(morse_complex, mesh$vertices, 
-                                      ax_distance, grid_size)
+                                      max_distance, grid_size)
   
   # Step 4: Detect tree seeds
   message("4. Detecting tree seeds...\n")
