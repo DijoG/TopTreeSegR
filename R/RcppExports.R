@@ -25,15 +25,3 @@ build_minima_connectivity_spatial_cpp <- function(minima, vertices, max_distance
     .Call(`_TopTreeSegR_build_minima_connectivity_spatial_cpp`, minima, vertices, max_distance, grid_size)
 }
 
-build_minima_connectivity_from_saddles_cpp <- function(critical_simplices, vector_field, minima) {
-    .Call(`_TopTreeSegR_build_minima_connectivity_from_saddles_cpp`, critical_simplices, vector_field, minima)
-}
-
-propagate_labels_minima_graph_cpp <- function(minima_graph, seed_indices, seed_labels, elevations, n_minima) {
-    .Call(`_TopTreeSegR_propagate_labels_minima_graph_cpp`, minima_graph, seed_indices, seed_labels, elevations, n_minima)
-}
-
-build_minima_connectivity_optimized_vpath_cpp <- function(critical_simplices, vector_field, minima) {
-    .Call(`_TopTreeSegR_build_minima_connectivity_optimized_vpath_cpp`, critical_simplices, vector_field, minima)
-}
-

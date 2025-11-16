@@ -109,16 +109,8 @@ TTS_segmentation <- function(lasdf, alpha = 0.1, clip_height = 0.5,
   seeds = detect_tree_seeds_proper(gradient_flow$minima, mesh$vertices, clip_height)
   
   # Step 5: Propagate labels
-  #message("5. Propagating labels...\n")
-  #labeled_data = propagate_labels_simple_fixed(gradient_flow, seeds, mesh$vertices)
-  
-  # Step 6: Create segmentation
-  #message("6. Creating final segmentation...\n")
-  #segmentation = create_segmentation_proper(mesh$vertices, gradient_flow, labeled_data)
-  
-  # Step 5: Propagate labels USING PAPER'S EXACT METHOD
-  message("5. Propagating labels via minima graph (paper method)...\n")
-  labeled_data = propagate_labels_paper_method(gradient_flow, seeds, mesh$vertices)
+  message("5. Propagating labels...\n")
+  labeled_data = propagate_labels_simple_fixed(gradient_flow, seeds, mesh$vertices)
   
   # Step 6: Create segmentation
   message("6. Creating final segmentation...\n")
@@ -535,109 +527,3 @@ print_TTS_result <- function(x, ...) {
   invisible(x)
 }
 
-####
-####
-#' Build Minima Connectivity from 1-Saddles (R Wrapper)
-#' 
-#' @keywords internal
-build_minima_connectivity_from_saddles <- function(morse_complex, minima) {
-  build_minima_connectivity_from_saddles_cpp(
-    morse_complex$critical_simplices,
-    morse_complex$vector_field,
-    as.numeric(minima) - 1  # Convert to 0-based
-  )
-}
-
-#' Build Ultra-Fast Gradient Flow (Optimized V-Path Method)
-#' 
-#' @keywords internal
-build_gradient_flow_ultra_paper <- function(morse_complex, vertices, max_distance = 2.0, grid_size = 5.0) {
-  message("  Building ULTRA-FAST gradient flow with Armadillo...\n")
-  
-  # Extract minima using C++ implementation
-  minima = extract_minima_corrected_cpp(morse_complex, vertices, tempdir())
-  message("  Found ", length(minima), " minima\n")
-  
-  # Convert to Armadillo types for maximum speed
-  minima_arma = as.numeric(minima) - 1  # Convert to 0-based for C++
-  vertices_arma = as.matrix(vertices)
-  
-  # ULTRA-FAST: Parse gradient pairs
-  message("  [Armadillo] Parsing gradient pairs...\n")
-  parse_time = system.time({
-    gradient_network = parse_gradient_network_fast_cpp(morse_complex$vector_field, 
-                                                       vertices[,3],     # elevations
-                                                       nrow(vertices))   # n_vertices
-  })
-  
-  message(sprintf("  [Armadillo] Found %d vertex->edge pairs, %d edge->face pairs (%.2fs)\n",
-                  gradient_network$vertex_pair_count, gradient_network$edge_count, parse_time[3]))
-  
-  # ULTRA-FAST: Compute ascending regions
-  message("  [Armadillo] Computing ascending regions...\n")
-  ascend_time = system.time({
-    ascending_regions = compute_ascending_regions_fast_cpp(gradient_network, minima_arma, nrow(vertices))
-  })
-  
-  # OPTIMIZED V-PATH METHOD
-  message("  [Armadillo] Building minima connectivity (OPTIMIZED V-PATH METHOD)...\n")
-  graph_time = system.time({
-    minima_connectivity = build_minima_connectivity_optimized_vpath_cpp(
-      morse_complex$critical,
-      morse_complex$vector_field,
-      minima_arma
-    )
-  })
-  
-  avg_degree = mean(sapply(minima_connectivity, length))
-  message(sprintf("  [Armadillo] Graph: %d minima, avg degree: %.2f (%.2fs)\n", 
-                  length(minima), avg_degree, graph_time[3]))
-  
-  list(
-    minima = minima,
-    ascending_regions = as.integer(ascending_regions),
-    gradient_network = gradient_network,
-    minima_connectivity = minima_connectivity
-  )
-}
-
-#' Propagate Labels via Minima Graph (Paper's Exact Method)
-#' 
-#' @keywords internal
-propagate_labels_paper_method <- function(gradient_flow, seeds, vertices) {
-  minima = gradient_flow$minima
-  n_minima = length(minima)
-  
-  # Mark seed minima
-  seed_indices = match(seeds$seed_minima, minima)
-  valid_seeds = which(!is.na(seed_indices))
-  
-  if (length(valid_seeds) == 0) {
-    message("  No seed matches found in minima\n")
-    # If no seeds, each minimum gets its own label
-    return(list(minima = minima, labels = 1:length(minima)))
-  }
-  
-  message("  Found ", length(valid_seeds), " seed matches\n")
-  
-  # Use C++ implementation for label propagation
-  labels = propagate_labels_minima_graph_cpp(
-    gradient_flow$minima_connectivity,
-    as.numeric(seed_indices[valid_seeds]) - 1,  # 0-based indices
-    seeds$seed_labels[valid_seeds],
-    vertices[minima, 3],  # elevations
-    n_minima
-  )
-  
-  # Handle any remaining unlabeled minima (disconnected components)
-  unlabeled = which(labels == 0)
-  if (length(unlabeled) > 0) {
-    message("  ", length(unlabeled), " disconnected minima assigned unique labels\n")
-    next_label = max(labels) + 1
-    labels[unlabeled] = next_label:(next_label + length(unlabeled) - 1)
-  }
-  
-  message("  Paper method label distribution:\n")
-  print(table(labels))
-  list(minima = minima, labels = as.integer(labels))
-}
