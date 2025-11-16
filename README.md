@@ -26,7 +26,8 @@ library(TopTreeSegR)
 
 ### One-Line Segmentation
 ```r
-library(lidR)
+library(lidR) 
+libary(dplyr) # Required by DiscreteMorseR
 trees <- lidR::readLAS(trees.las)
 
 # One-line segmentation on structural points
