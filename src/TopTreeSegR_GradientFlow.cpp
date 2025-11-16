@@ -411,7 +411,7 @@ arma::uword find_previous_vertex_cpp(const std::vector<std::string>& vector_fiel
   return 0;  // Not found
 }
 
-// Build minima connectivity from 1-saddles (Paper's exact method)
+// Build minima connectivity from 1-saddles with progress reporting
 // [[Rcpp::export]]
 List build_minima_connectivity_from_saddles_cpp(const std::vector<std::string>& critical_simplices,
                                                 const std::vector<std::string>& vector_field,
@@ -422,20 +422,36 @@ List build_minima_connectivity_from_saddles_cpp(const std::vector<std::string>& 
   // Step 1: Extract 1-saddles (critical edges)
   std::vector<std::vector<arma::uword>> saddles;
   
-  for (const auto& simplex_str : critical_simplices) {
-    std::vector<arma::uword> vertices = parse_simplex_vertices_cpp(simplex_str);
+  Rcpp::Rcout << "  [C++] Processing " << critical_simplices.size() << " critical simplices..." << std::endl;
+  
+  for (size_t i = 0; i < critical_simplices.size(); i++) {
+    std::vector<arma::uword> vertices = parse_simplex_vertices_cpp(critical_simplices[i]);
     
     // 1-saddles are edges (2 vertices)
     if (vertices.size() == 2) {
       saddles.push_back(vertices);
     }
+    
+    // Progress reporting every 10,000 simplices
+    if (i % 10000 == 0 && i > 0) {
+      Rcpp::Rcout << "  [C++] Processed " << i << "/" << critical_simplices.size() 
+                  << " critical simplices, found " << saddles.size() << " 1-saddles" << std::endl;
+    }
   }
   
-  Rcpp::Rcout << "  [C++] Found " << saddles.size() << " 1-saddles" << std::endl;
+  Rcpp::Rcout << "  [C++] Found " << saddles.size() << " 1-saddles total" << std::endl;
   
   // Step 2: For each saddle, find connected minima via V-paths
-  for (const auto& saddle : saddles) {
+  Rcpp::Rcout << "  [C++] Building minima connectivity graph..." << std::endl;
+  
+  for (size_t s = 0; s < saddles.size(); s++) {
+    const auto& saddle = saddles[s];
     std::vector<arma::uword> connected_minima_indices;
+    
+    // Progress reporting every 1000 saddles
+    if (s % 1000 == 0 && s > 0) {
+      Rcpp::Rcout << "  [C++] Processed " << s << "/" << saddles.size() << " 1-saddles" << std::endl;
+    }
     
     // For each vertex in the saddle, follow V-path to find minima
     for (arma::uword saddle_vertex : saddle) {
@@ -487,6 +503,8 @@ List build_minima_connectivity_from_saddles_cpp(const std::vector<std::string>& 
       }
     }
   }
+  
+  Rcpp::Rcout << "  [C++] Minima connectivity graph complete" << std::endl;
   
   // Convert to R list
   List adjacency_r(n_minima);
@@ -550,4 +568,163 @@ arma::uvec propagate_labels_minima_graph_cpp(const List& minima_graph,
   }
   
   return labels;
+}
+
+// [[Rcpp::export]]
+List build_minima_connectivity_optimized_vpath_cpp(const std::vector<std::string>& critical_simplices,
+                                                   const std::vector<std::string>& vector_field,
+                                                   const arma::uvec& minima,
+                                                   arma::uword max_vpath_length = 100) {
+  arma::uword n_minima = minima.n_elem;
+  std::vector<std::vector<arma::uword>> adjacency(n_minima);
+  
+  Rcpp::Rcout << "  [C++] Building optimized V-path connectivity..." << std::endl;
+  Rcpp::Rcout << "  [C++] Max V-path length: " << max_vpath_length << std::endl;
+  
+  // Step 1: Precompute reverse flow map for O(1) lookups
+  Rcpp::Rcout << "  [C++] Building reverse flow lookup table..." << std::endl;
+  std::unordered_map<arma::uword, arma::uword> reverse_flow_map;
+  arma::uword mapping_count = 0;
+  
+  for (const auto& line : vector_field) {
+    size_t colon_pos = line.find(':');
+    if (colon_pos == std::string::npos) continue;
+    
+    std::string left = line.substr(0, colon_pos);
+    std::string right = line.substr(colon_pos + 1);
+    
+    std::vector<arma::uword> left_verts = parse_simplex_vertices_cpp(left);
+    std::vector<arma::uword> right_verts = parse_simplex_vertices_cpp(right);
+    
+    // Vertex -> Edge pairs
+    if (left_verts.size() == 1 && right_verts.size() == 2) {
+      // Map both edge vertices back to the source vertex
+      reverse_flow_map[right_verts[0]] = left_verts[0];
+      reverse_flow_map[right_verts[1]] = left_verts[0];
+      mapping_count += 2;
+    }
+  }
+  
+  Rcpp::Rcout << "  [C++] Built reverse flow map with " << mapping_count << " entries" << std::endl;
+  
+  // Step 2: Extract 1-saddles (critical edges)
+  std::vector<std::vector<arma::uword>> saddles;
+  
+  Rcpp::Rcout << "  [C++] Extracting 1-saddles from " << critical_simplices.size() << " critical simplices..." << std::endl;
+  
+  for (size_t i = 0; i < critical_simplices.size(); i++) {
+    std::vector<arma::uword> vertices = parse_simplex_vertices_cpp(critical_simplices[i]);
+    
+    // 1-saddles are edges (2 vertices)
+    if (vertices.size() == 2) {
+      saddles.push_back(vertices);
+    }
+    
+    // Progress reporting
+    if (i % 50000 == 0 && i > 0) {
+      Rcpp::Rcout << "  [C++] Processed " << i << "/" << critical_simplices.size() 
+                  << " critical simplices, found " << saddles.size() << " 1-saddles" << std::endl;
+    }
+  }
+  
+  Rcpp::Rcout << "  [C++] Found " << saddles.size() << " 1-saddles total" << std::endl;
+  
+  // Step 3: For each saddle, find connected minima via OPTIMIZED V-paths
+  Rcpp::Rcout << "  [C++] Building minima connectivity graph with optimized V-paths..." << std::endl;
+  
+  arma::uword total_vpath_steps = 0;
+  arma::uword successful_connections = 0;
+  arma::uword truncated_paths = 0;
+  
+  for (size_t s = 0; s < saddles.size(); s++) {
+    const auto& saddle = saddles[s];
+    std::vector<arma::uword> connected_minima_indices;
+    
+    // Progress reporting
+    if (s % 10000 == 0 && s > 0) {
+      Rcpp::Rcout << "  [C++] Processed " << s << "/" << saddles.size() << " 1-saddles, " 
+                  << successful_connections << " connections made" << std::endl;
+    }
+    
+    // For each vertex in the saddle, follow V-path to find minima
+    for (arma::uword saddle_vertex : saddle) {
+      arma::uword current_vertex = saddle_vertex;
+      arma::uword path_length = 0;
+      bool found_minimum = false;
+      
+      // Follow V-path with length limit
+      while (path_length < max_vpath_length) {
+        path_length++;
+        total_vpath_steps++;
+        
+        // Check if current vertex is a minimum
+        arma::uvec min_match = find(minima == current_vertex);
+        if (min_match.n_elem > 0) {
+          connected_minima_indices.push_back(min_match(0));
+          found_minimum = true;
+          successful_connections++;
+          break;
+        }
+        
+        // Use fast lookup table to find next vertex
+        auto it = reverse_flow_map.find(current_vertex);
+        if (it == reverse_flow_map.end()) {
+          break;  // No reverse flow found
+        }
+        
+        arma::uword next_vertex = it->second;
+        
+        // Avoid cycles by checking if we're going backwards
+        if (next_vertex == current_vertex) {
+          break;
+        }
+        
+        current_vertex = next_vertex;
+      }
+      
+      if (path_length >= max_vpath_length && !found_minimum) {
+        truncated_paths++;
+      }
+    }
+    
+    // Remove duplicates and connect minima found through this saddle
+    std::sort(connected_minima_indices.begin(), connected_minima_indices.end());
+    connected_minima_indices.erase(
+      std::unique(connected_minima_indices.begin(), connected_minima_indices.end()),
+      connected_minima_indices.end()
+    );
+    
+    // Connect all minima found through this saddle (if at least 2)
+    if (connected_minima_indices.size() >= 2) {
+      for (size_t i = 0; i < connected_minima_indices.size(); i++) {
+        for (size_t j = i + 1; j < connected_minima_indices.size(); j++) {
+          arma::uword idx1 = connected_minima_indices[i];
+          arma::uword idx2 = connected_minima_indices[j];
+          
+          // Add bidirectional connection
+          if (std::find(adjacency[idx1].begin(), adjacency[idx1].end(), idx2) == adjacency[idx1].end()) {
+            adjacency[idx1].push_back(idx2);
+          }
+          if (std::find(adjacency[idx2].begin(), adjacency[idx2].end(), idx1) == adjacency[idx2].end()) {
+            adjacency[idx2].push_back(idx1);
+          }
+        }
+      }
+    }
+  }
+  
+  // Final statistics
+  Rcpp::Rcout << "  [C++] V-path statistics:" << std::endl;
+  Rcpp::Rcout << "  [C++]   Total V-path steps: " << total_vpath_steps << std::endl;
+  Rcpp::Rcout << "  [C++]   Successful connections: " << successful_connections << std::endl;
+  Rcpp::Rcout << "  [C++]   Truncated paths: " << truncated_paths << std::endl;
+  Rcpp::Rcout << "  [C++]   Minima connectivity graph complete" << std::endl;
+  
+  // Convert to R list
+  List adjacency_r(n_minima);
+  for (arma::uword i = 0; i < n_minima; i++) {
+    adjacency_r[i] = arma::uvec(adjacency[i]);
+  }
+  
+  return adjacency_r;
 }

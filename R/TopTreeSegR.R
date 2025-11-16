@@ -548,7 +548,7 @@ build_minima_connectivity_from_saddles <- function(morse_complex, minima) {
   )
 }
 
-#' Build Ultra-Fast Gradient Flow (Using correct critical simplices)
+#' Build Ultra-Fast Gradient Flow (Optimized V-Path Method)
 #' 
 #' @keywords internal
 build_gradient_flow_ultra_paper <- function(morse_complex, vertices, max_distance = 2.0, grid_size = 5.0) {
@@ -579,27 +579,15 @@ build_gradient_flow_ultra_paper <- function(morse_complex, vertices, max_distanc
     ascending_regions = compute_ascending_regions_fast_cpp(gradient_network, minima_arma, nrow(vertices))
   })
   
-  # CORRECT: Use morse_complex$critical for critical simplices
-  message("  [Armadillo] Building minima connectivity from 1-saddles (paper method)...\n")
+  # OPTIMIZED V-PATH METHOD
+  message("  [Armadillo] Building minima connectivity (OPTIMIZED V-PATH METHOD)...\n")
   graph_time = system.time({
-    critical_simplices = morse_complex$critical
-    if (!is.null(critical_simplices) && length(critical_simplices) > 0) {
-      message("  Using ", length(critical_simplices), " critical simplices for graph construction\n")
-      minima_connectivity = build_minima_connectivity_from_saddles_cpp(
-        critical_simplices,
-        morse_complex$vector_field,
-        minima_arma
-      )
-    } else {
-      # Fallback: use spatial connectivity if critical simplices not available
-      message("  Critical simplices not available, using spatial connectivity fallback\n")
-      if (length(minima) > 1000) {
-        minima_connectivity = build_minima_connectivity_spatial_cpp(minima_arma, vertices_arma, 
-                                                                    max_distance, grid_size)
-      } else {
-        minima_connectivity = build_minima_connectivity_fast_cpp(minima_arma, vertices_arma, max_distance)
-      }
-    }
+    minima_connectivity = build_minima_connectivity_optimized_vpath_cpp(
+      morse_complex$critical,
+      morse_complex$vector_field,
+      minima_arma,
+      100  # max_vpath_length = 100 steps
+    )
   })
   
   avg_degree = mean(sapply(minima_connectivity, length))

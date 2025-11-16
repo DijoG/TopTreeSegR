@@ -116,6 +116,20 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// build_minima_connectivity_optimized_vpath_cpp
+List build_minima_connectivity_optimized_vpath_cpp(const std::vector<std::string>& critical_simplices, const std::vector<std::string>& vector_field, const arma::uvec& minima, arma::uword max_vpath_length);
+RcppExport SEXP _TopTreeSegR_build_minima_connectivity_optimized_vpath_cpp(SEXP critical_simplicesSEXP, SEXP vector_fieldSEXP, SEXP minimaSEXP, SEXP max_vpath_lengthSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const std::vector<std::string>& >::type critical_simplices(critical_simplicesSEXP);
+    Rcpp::traits::input_parameter< const std::vector<std::string>& >::type vector_field(vector_fieldSEXP);
+    Rcpp::traits::input_parameter< const arma::uvec& >::type minima(minimaSEXP);
+    Rcpp::traits::input_parameter< arma::uword >::type max_vpath_length(max_vpath_lengthSEXP);
+    rcpp_result_gen = Rcpp::wrap(build_minima_connectivity_optimized_vpath_cpp(critical_simplices, vector_field, minima, max_vpath_length));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_TopTreeSegR_parse_simplex_vertices_cpp", (DL_FUNC) &_TopTreeSegR_parse_simplex_vertices_cpp, 1},
@@ -126,6 +140,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_TopTreeSegR_build_minima_connectivity_spatial_cpp", (DL_FUNC) &_TopTreeSegR_build_minima_connectivity_spatial_cpp, 4},
     {"_TopTreeSegR_build_minima_connectivity_from_saddles_cpp", (DL_FUNC) &_TopTreeSegR_build_minima_connectivity_from_saddles_cpp, 3},
     {"_TopTreeSegR_propagate_labels_minima_graph_cpp", (DL_FUNC) &_TopTreeSegR_propagate_labels_minima_graph_cpp, 5},
+    {"_TopTreeSegR_build_minima_connectivity_optimized_vpath_cpp", (DL_FUNC) &_TopTreeSegR_build_minima_connectivity_optimized_vpath_cpp, 4},
     {NULL, NULL, 0}
 };
 
