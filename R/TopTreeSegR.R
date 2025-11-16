@@ -145,7 +145,9 @@ build_gradient_flow_ultra <- function(morse_complex, vertices, max_distance = 2.
   # ULTRA-FAST: Parse gradient pairs
   message("  [Armadillo] Parsing gradient pairs...\n")
   parse_time = system.time({
-    gradient_network = parse_gradient_network_fast(morse_complex$vector_field, nrow(vertices))
+    gradient_network = parse_gradient_network_fast(morse_complex$vector_field, 
+                                                   vertices[,3],     # Add elevations
+                                                   nrow(vertices))   # Add n_vertices
   })
   
   message(sprintf("  [Armadillo] Found %d vertex->edge pairs, %d edge->face pairs (%.2fs)\n",
