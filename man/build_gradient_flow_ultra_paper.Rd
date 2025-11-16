@@ -2,7 +2,7 @@
 % Please edit documentation in R/TopTreeSegR.R
 \name{build_gradient_flow_ultra_paper}
 \alias{build_gradient_flow_ultra_paper}
-\title{Build Ultra-Fast Gradient Flow (Updated with Paper Method)}
+\title{Build Ultra-Fast Gradient Flow (Using correct critical simplices)}
 \usage{
 build_gradient_flow_ultra_paper(
   morse_complex,
@@ -12,6 +12,6 @@ build_gradient_flow_ultra_paper(
 )
 }
 \description{
-Build Ultra-Fast Gradient Flow (Updated with Paper Method)
+Build Ultra-Fast Gradient Flow (Using correct critical simplices)
 }
 \keyword{internal}
