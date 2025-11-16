@@ -257,53 +257,38 @@ List parse_gradient_network_fast(const std::vector<std::string>& vector_field,
   );
 }
 
-// Ultra-fast ascending regions - FIXED VERSION
+// PROPER ascending regions with NO BASIN MERGING
 // [[Rcpp::export]]
-arma::uvec compute_ascending_regions_fast(const List& gradient_network, 
-                                          const arma::uvec& minima, 
-                                          arma::uword n_vertices) {
+arma::uvec compute_ascending_regions_fast_fixed(const List& gradient_network, 
+                                                const arma::uvec& minima, 
+                                                arma::uword n_vertices) {
   arma::uvec ascending_regions = zeros<arma::uvec>(n_vertices);
   arma::uvec vertex_flow = gradient_network["vertex_flow"];
-  List reverse_flow_r = gradient_network["reverse_flow"];
   
   // Convert minima to 1-based indexing for C++
   arma::uvec minima_1based = minima + 1;
   
-  // Use unique region IDs starting from 1
-  arma::uword region_counter = 1;
+  // Step 1: Assign each minimum to its own region
+  for (arma::uword i = 0; i < minima_1based.n_elem; i++) {
+    arma::uword min_vertex = minima_1based(i);
+    ascending_regions(min_vertex - 1) = i + 1;
+  }
   
-  // Process each minimum independently
-  for (arma::uword min_idx = 0; min_idx < minima_1based.n_elem; min_idx++) {
-    arma::uword min_vertex = minima_1based(min_idx);
-    
-    // Only process unassigned minima
-    if (ascending_regions(min_vertex - 1) == 0) {
-      std::queue<arma::uword> queue;
-      queue.push(min_vertex);
-      ascending_regions(min_vertex - 1) = region_counter;
-      
-      // BFS from this minimum only
-      while (!queue.empty()) {
-        arma::uword current = queue.front();
-        queue.pop();
-        
-        // Follow reverse flow (points that flow TO current)
-        arma::uvec sources = reverse_flow_r[current];
-        for (arma::uword j = 0; j < sources.n_elem; j++) {
-          arma::uword source = sources(j);
-          // Only assign if not already assigned to another region
-          if (ascending_regions(source - 1) == 0) {
-            ascending_regions(source - 1) = region_counter;
-            queue.push(source);
-          }
+  // Step 2: Propagate labels following ACTUAL flow paths (not reverse connectivity)
+  bool changed = true;
+  while (changed) {
+    changed = false;
+    for (arma::uword v = 0; v < n_vertices; v++) {
+      if (ascending_regions(v) == 0 && vertex_flow(v + 1) > 0) {
+        arma::uword target = vertex_flow(v + 1) - 1; // Convert to 0-based
+        if (ascending_regions(target) > 0) {
+          ascending_regions(v) = ascending_regions(target);
+          changed = true;
         }
       }
-      
-      region_counter++;  // Next region gets new ID
     }
   }
   
-  Rcpp::Rcout << "  [C++] Created " << (region_counter - 1) << " distinct ascending regions" << std::endl;
   return ascending_regions;
 }
 
