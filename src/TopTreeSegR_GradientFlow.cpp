@@ -577,10 +577,13 @@ List build_minima_connectivity_optimized_vpath_cpp(const std::vector<std::string
   arma::uword n_minima = minima.n_elem;
   std::vector<std::vector<arma::uword>> adjacency(n_minima);
   
-  Rcpp::Rcout << "  [C++] Building minima connectivity (CLASSIC MORSE THEORY)..." << std::endl;
+  Rcpp::Rcout << "  [C++] Building minima connectivity (PROPER MORSE THEORY)..." << std::endl;
   
-  // Step 1: Build reverse flow map for V-path following
-  std::unordered_map<arma::uword, arma::uword> reverse_flow;
+  // Step 1: Build the discrete vector field mapping
+  // In Morse theory: each edge is paired with either a vertex (V₀-pair) or a face (V₁-pair)
+  std::unordered_map<arma::uword, arma::uword> edge_to_vertex; // V₀-pairs: edge → vertex
+  std::unordered_map<arma::uword, arma::uword> vertex_to_edge; // V₀-pairs: vertex → edge
+  
   for (const auto& line : vector_field) {
     size_t colon_pos = line.find(':');
     if (colon_pos == std::string::npos) continue;
@@ -591,44 +594,51 @@ List build_minima_connectivity_optimized_vpath_cpp(const std::vector<std::string
     std::vector<arma::uword> left_verts = parse_simplex_vertices_cpp(left);
     std::vector<arma::uword> right_verts = parse_simplex_vertices_cpp(right);
     
+    // V₀-pairs: vertex → edge
     if (left_verts.size() == 1 && right_verts.size() == 2) {
-      // For edge vertices, map back to source vertex
-      reverse_flow[right_verts[0]] = left_verts[0];
-      reverse_flow[right_verts[1]] = left_verts[0];
+      arma::uword vertex = left_verts[0];
+      // For V₀-pairs, we map the edge vertices back to the source vertex
+      edge_to_vertex[right_verts[0]] = vertex;
+      edge_to_vertex[right_verts[1]] = vertex;
+      vertex_to_edge[vertex] = right_verts[0]; // Store one edge vertex as representative
     }
   }
   
-  Rcpp::Rcout << "  [C++] Built reverse flow map with " << reverse_flow.size() << " entries" << std::endl;
+  Rcpp::Rcout << "  [C++] Built Morse vector field: " << edge_to_vertex.size() 
+              << " edge→vertex mappings" << std::endl;
   
-  // Step 2: Extract 1-saddles (critical edges)
+  // Step 2: Extract 1-saddles (critical edges - edges NOT in V₀-pairs)
   std::vector<std::vector<arma::uword>> saddle_edges;
+  
   for (const auto& simplex_str : critical_simplices) {
     std::vector<arma::uword> vertices = parse_simplex_vertices_cpp(simplex_str);
     if (vertices.size() == 2) {
+      // This is a critical edge (1-saddle)
       saddle_edges.push_back(vertices);
     }
   }
   
-  Rcpp::Rcout << "  [C++] Found " << saddle_edges.size() << " 1-saddles" << std::endl;
+  Rcpp::Rcout << "  [C++] Found " << saddle_edges.size() << " 1-saddles (critical edges)" << std::endl;
   
-  // Step 3: For each 1-saddle, follow V₀-paths to find the TWO minima it connects
-  arma::uword successful_connections = 0;
-  arma::uword failed_connections = 0;
+  // Step 3: For each 1-saddle, find the two minima it connects via V₀-paths
+  arma::uword valid_saddles = 0;
+  arma::uword invalid_saddles = 0;
   
   for (const auto& saddle_edge : saddle_edges) {
     std::vector<arma::uword> connected_minima;
     
-    // For each vertex in the saddle edge, follow V-path to find minimum
+    // A 1-saddle should connect exactly 2 minima via V₀-paths
+    // Follow V-path from each vertex of the saddle edge
     for (arma::uword saddle_vertex : saddle_edge) {
       arma::uword current = saddle_vertex;
       arma::uword path_length = 0;
       bool found_minimum = false;
       
-      // Follow V-path to minimum (should be short in proper Morse complex)
-      while (path_length < 1000) { // Reasonable limit
+      // Follow V₀-path to minimum
+      while (path_length < 100) { // V-paths should be reasonably short
         path_length++;
         
-        // Check if current is a minimum
+        // Check if current vertex is a minimum
         arma::uvec min_match = find(minima == current);
         if (min_match.n_elem > 0) {
           connected_minima.push_back(min_match(0));
@@ -636,49 +646,64 @@ List build_minima_connectivity_optimized_vpath_cpp(const std::vector<std::string
           break;
         }
         
-        // Follow reverse gradient flow
-        auto it = reverse_flow.find(current);
-        if (it == reverse_flow.end()) {
-          break; // No reverse flow - can't reach minimum
+        // Follow the gradient flow: if this vertex flows to an edge, get the paired vertex
+        auto edge_it = vertex_to_edge.find(current);
+        if (edge_it != vertex_to_edge.end()) {
+          // This vertex is in a V₀-pair, follow to the paired edge vertex
+          arma::uword edge_vertex = edge_it->second;
+          // Then from edge vertex, find which vertex it flows to
+          auto vertex_it = edge_to_vertex.find(edge_vertex);
+          if (vertex_it != edge_to_vertex.end()) {
+            current = vertex_it->second;
+            continue;
+          }
         }
         
-        current = it->second;
+        // If no V₀-pair found, try direct edge→vertex mapping
+        auto direct_it = edge_to_vertex.find(current);
+        if (direct_it != edge_to_vertex.end()) {
+          current = direct_it->second;
+        } else {
+          break; // Cannot continue V-path
+        }
       }
       
       if (!found_minimum) {
-        failed_connections++;
+        Rcpp::Rcout << "  WARNING: Could not find minimum from saddle vertex " << saddle_vertex << std::endl;
       }
     }
     
-    // Remove duplicates and connect the minima
+    // Remove duplicates
     std::sort(connected_minima.begin(), connected_minima.end());
     connected_minima.erase(
       std::unique(connected_minima.begin(), connected_minima.end()),
       connected_minima.end()
     );
     
-    // Each saddle should connect exactly 2 minima
+    // In proper Morse theory, each 1-saddle should connect exactly 2 minima
     if (connected_minima.size() == 2) {
-      successful_connections++;
-      arma::uword idx1 = connected_minima[0];
-      arma::uword idx2 = connected_minima[1];
+      valid_saddles++;
+      arma::uword min1_idx = connected_minima[0];
+      arma::uword min2_idx = connected_minima[1];
       
-      // Add bidirectional connection
-      if (std::find(adjacency[idx1].begin(), adjacency[idx1].end(), idx2) == adjacency[idx1].end()) {
-        adjacency[idx1].push_back(idx2);
+      // Connect the two minima
+      if (std::find(adjacency[min1_idx].begin(), adjacency[min1_idx].end(), min2_idx) == adjacency[min1_idx].end()) {
+        adjacency[min1_idx].push_back(min2_idx);
       }
-      if (std::find(adjacency[idx2].begin(), adjacency[idx2].end(), idx1) == adjacency[idx2].end()) {
-        adjacency[idx2].push_back(idx1);
+      if (std::find(adjacency[min2_idx].begin(), adjacency[min2_idx].end(), min1_idx) == adjacency[min2_idx].end()) {
+        adjacency[min2_idx].push_back(min1_idx);
       }
-    } else if (connected_minima.size() > 2) {
-      Rcpp::Rcout << "  WARNING: Saddle connected " << connected_minima.size() << " minima" << std::endl;
+    } else {
+      invalid_saddles++;
+      if (connected_minima.size() > 0) {
+        Rcpp::Rcout << "  Saddle connected " << connected_minima.size() << " minima (expected 2)" << std::endl;
+      }
     }
   }
   
-  Rcpp::Rcout << "  [C++] Classic Morse complete: " << successful_connections 
-              << " successful, " << failed_connections << " failed connections" << std::endl;
-  Rcpp::Rcout << "  [C++] Success rate: " 
-              << (100.0 * successful_connections / saddle_edges.size()) << "%" << std::endl;
+  Rcpp::Rcout << "  [C++] Morse theory results: " << valid_saddles << " valid, " 
+              << invalid_saddles << " invalid saddles" << std::endl;
+  Rcpp::Rcout << "  [C++] Valid saddles: " << (100.0 * valid_saddles / saddle_edges.size()) << "%" << std::endl;
   
   // Convert to R list
   List adjacency_r(n_minima);
