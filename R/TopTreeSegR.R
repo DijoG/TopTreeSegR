@@ -66,7 +66,8 @@ NULL
 #' plot(result)
 #' }
 TTS_segmentation <- function(lasdf, alpha = 0.1, clip_height = 0.5, 
-                             max_distance = 2.0, grid_size = 5.0, cores = 12) {
+                             max_distance = 2.0, grid_size = 5.0, 
+                             cores = 12, spatial_threshold = 1.5) {
   
   # Check dependencies
   .check_dependencies()
@@ -102,7 +103,8 @@ TTS_segmentation <- function(lasdf, alpha = 0.1, clip_height = 0.5,
   # Step 3: ULTRA-FAST gradient flow with Armadillo
   message("3. Building ULTRA-FAST gradient flow...\n")
   gradient_flow = build_gradient_flow_ultra(morse_complex, mesh$vertices, 
-                                            max_distance, grid_size)
+                                            max_distance, grid_size,
+                                            spatial_threshold)
   
   # Step 4: Detect tree seeds
   message("4. Detecting tree seeds...\n")
@@ -110,7 +112,7 @@ TTS_segmentation <- function(lasdf, alpha = 0.1, clip_height = 0.5,
   
   # Step 5: Propagate labels
   message("5. Propagating labels...\n")
-  labeled_data = propagate_labels_simple_fixed(gradient_flow, seeds, mesh$vertices)
+  labeled_data = propagate_labels_constrained(gradient_flow, seeds, mesh$vertices, spatial_threshold)
   
   # Step 6: Create segmentation
   message("6. Creating final segmentation...\n")
@@ -131,7 +133,9 @@ TTS_segmentation <- function(lasdf, alpha = 0.1, clip_height = 0.5,
 #' Build Ultra-Fast Gradient Flow
 #' 
 #' @keywords internal
-build_gradient_flow_ultra <- function(morse_complex, vertices, max_distance = 2.0, grid_size = 5.0) {
+build_gradient_flow_ultra <- function(morse_complex, vertices, 
+                                      max_distance = 2.0, grid_size = 5.0,
+                                      spatial_threshold = 2.0) {
   message("  Building ULTRA-FAST gradient flow with Armadillo...\n")
   
   # Extract minima using C++ implementation
@@ -231,42 +235,22 @@ detect_tree_seeds_proper <- function(minima, vertices, clip_height) {
 #' Propagate Labels via Gradient Flow
 #' 
 #' @keywords internal
-propagate_labels_simple_fixed <- function(gradient_flow, seeds, vertices) {
-  minima = gradient_flow$minima
-  n_minima = length(minima)
-  labels = integer(n_minima)
+propagate_labels_constrained <- function(gradient_flow, seeds, vertices, spatial_threshold = 2.0) {
+  message("  [C++] Spatial-constrained region to tree assignment...\n")
   
-  # Mark seed minima
-  seed_indices = match(seeds$seed_minima, minima)
-  valid_seeds = which(!is.na(seed_indices))
+  # Call the C++ function with spatial constraints
+  segmentation = assign_regions_to_trees(
+    gradient_flow$ascending_regions,
+    seeds$seed_minima, 
+    seeds$seed_labels,
+    vertices,
+    spatial_threshold = spatial_threshold  
+  )
   
-  if (length(valid_seeds) == 0) {
-    message("  No seed matches, using simple spatial assignment\n")
-    # Simple spatial assignment
-    seed_coords = vertices[seeds$seed_minima, 1:2, drop = FALSE]
-    minima_coords = vertices[minima, 1:2, drop = FALSE]
-    
-    # Assign each minimum to nearest seed
-    nn_idx = FNN::get.knnx(seed_coords, minima_coords, k = 1)$nn.index
-    labels = seeds$seed_labels[nn_idx]
-  } else {
-    message("  Found ", length(valid_seeds), "seed matches\n")
-    seed_indices = seed_indices[valid_seeds]
-    labels[seed_indices] = seeds$seed_labels[valid_seeds]
-    
-    # Simple spatial propagation for remaining
-    unlabeled = which(labels == 0)
-    if (length(unlabeled) > 0) {
-      labeled_coords = vertices[minima[labels > 0], 1:2, drop = FALSE]
-      unlabeled_coords = vertices[minima[unlabeled], 1:2, drop = FALSE]
-      nn_idx = FNN::get.knnx(labeled_coords, unlabeled_coords, k = 1)$nn.index
-      labels[unlabeled] = labels[labels > 0][nn_idx]
-    }
-  }
+  message("  Spatial-constrained label distribution:\n")
+  print(table(segmentation))
   
-  message("  Simple label distribution:\n")
-  print(table(labels))
-  list(minima = minima, labels = labels)
+  return(list(minima = gradient_flow$minima, labels = segmentation[gradient_flow$minima]))
 }
 
 #' Create Final Segmentation
@@ -323,7 +307,7 @@ plot_TTS_2d <- function(x, point_size = 0.5, alpha = 0.8,
   
   # Create plot data based on projection
   if (projection == "XY") {
-    plot_data <- data.frame(
+    plot_data = data.frame(
       x = x$points[,1],
       y = x$points[,2],
       tree = as.factor(x$segmentation)
@@ -331,7 +315,7 @@ plot_TTS_2d <- function(x, point_size = 0.5, alpha = 0.8,
     x_lab = "X"
     y_lab = "Y"
   } else if (projection == "XZ") {
-    plot_data <- data.frame(
+    plot_data = data.frame(
       x = x$points[,1],
       y = x$points[,3],
       tree = as.factor(x$segmentation)

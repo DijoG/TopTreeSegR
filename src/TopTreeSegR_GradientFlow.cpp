@@ -265,26 +265,33 @@ arma::uvec compute_ascending_regions_fast(const List& gradient_network,
   arma::uvec ascending_regions = zeros<arma::uvec>(n_vertices);
   arma::uvec vertex_flow = gradient_network["vertex_flow"];
   
-  // Convert minima to 1-based indexing for C++
-  arma::uvec minima_1based = minima + 1;
+  // Extract reverse_flow list once
+  List reverse_flow_list = gradient_network["reverse_flow"];
   
-  // Step 1: Assign each minimum to its own region
-  for (arma::uword i = 0; i < minima_1based.n_elem; i++) {
-    arma::uword min_vertex = minima_1based(i);
-    ascending_regions(min_vertex - 1) = i + 1;
+  // Convert to 1-based and assign minima in one pass
+  for (arma::uword i = 0; i < minima.n_elem; i++) {
+    ascending_regions(minima(i)) = i + 1; // Already 0-based
   }
   
-  // Step 2: Propagate labels following ACTUAL flow paths (not reverse connectivity)
-  bool changed = true;
-  while (changed) {
-    changed = false;
-    for (arma::uword v = 0; v < n_vertices; v++) {
-      if (ascending_regions(v) == 0 && vertex_flow(v + 1) > 0) {
-        arma::uword target = vertex_flow(v + 1) - 1; // Convert to 0-based
-        if (ascending_regions(target) > 0) {
-          ascending_regions(v) = ascending_regions(target);
-          changed = true;
-        }
+  // Use queue-based BFS for better cache performance
+  std::queue<arma::uword> to_process;
+  for (arma::uword i = 0; i < minima.n_elem; i++) {
+    to_process.push(minima(i));
+  }
+  
+  while (!to_process.empty()) {
+    arma::uword current = to_process.front();
+    to_process.pop();
+    arma::uword current_region = ascending_regions(current);
+    
+    // Process all vertices that flow to current
+    // Get the reverse flow for current vertex (1-based indexing in R list)
+    arma::uvec sources = reverse_flow_list[current + 1];
+    for (arma::uword j = 0; j < sources.n_elem; j++) {
+      arma::uword source = sources(j) - 1; // Convert to 0-based
+      if (ascending_regions(source) == 0) {
+        ascending_regions(source) = current_region;
+        to_process.push(source);
       }
     }
   }
@@ -394,4 +401,109 @@ List build_minima_connectivity_spatial(const arma::uvec& minima,
   }
   
   return adjacency;
+}
+
+// Spatial-constrained region to tree assignment 
+// [[Rcpp::export]]
+arma::uvec assign_regions_to_trees(const arma::uvec& ascending_regions,
+                                   const arma::uvec& seed_minima,
+                                   const arma::uvec& seed_labels, 
+                                   const arma::mat& points,
+                                   double spatial_threshold = 3.0) {
+  
+  arma::uword n_points = points.n_rows;
+  arma::uvec segmentation = zeros<arma::uvec>(n_points);
+  
+  if (seed_minima.n_elem == 0) return segmentation;
+  
+  // Precompute seed coordinates once
+  arma::mat seed_coords = points.submat(seed_minima, arma::uvec{0, 1});
+  double threshold_sq = spatial_threshold * spatial_threshold; // Use squared distance
+  
+  // Step 1: Process regions efficiently
+  std::vector<arma::uword> region_ids;
+  std::vector<arma::rowvec> region_centers;
+  
+  // Reserve memory to avoid reallocations
+  region_ids.reserve(10000);
+  region_centers.reserve(10000);
+  
+  for (arma::uword reg_id = 1; reg_id <= arma::max(ascending_regions); reg_id++) {
+    arma::uvec region_points = find(ascending_regions == reg_id);
+    
+    if (region_points.n_elem > 0) {
+      region_ids.push_back(reg_id);
+      // Fast center calculation using column-wise mean
+      arma::mat region_xy = points.submat(region_points, arma::uvec{0, 1});
+      region_centers.push_back(mean(region_xy, 0));
+    }
+  }
+  
+  // Step 2: Efficient distance calculation
+  arma::uvec region_to_tree = zeros<arma::uvec>(arma::max(ascending_regions) + 1);
+  
+  for (size_t i = 0; i < region_centers.size(); i++) {
+    double min_dist_sq = std::numeric_limits<double>::max();
+    arma::uword best_seed = 0;
+    
+    // Fast distance computation with early termination
+    for (arma::uword j = 0; j < seed_coords.n_rows; j++) {
+      double dx = region_centers[i](0) - seed_coords(j, 0);
+      double dy = region_centers[i](1) - seed_coords(j, 1);
+      double dist_sq = dx * dx + dy * dy;
+      
+      if (dist_sq < min_dist_sq) {
+        min_dist_sq = dist_sq;
+        best_seed = j;
+        // Early termination if we find a very close seed
+        if (min_dist_sq < 0.1) break;
+      }
+    }
+    
+    if (min_dist_sq <= threshold_sq) {
+      region_to_tree(region_ids[i]) = seed_labels(best_seed);
+    }
+  }
+  
+  // Step 3: Fast segmentation assignment
+  for (arma::uword i = 0; i < n_points; i++) {
+    arma::uword region_id = ascending_regions(i);
+    if (region_id > 0) {
+      segmentation(i) = region_to_tree(region_id);
+    }
+  }
+  
+  // Step 4: Optimized unassigned point handling
+  arma::uvec unassigned = find(segmentation == 0);
+  if (unassigned.n_elem > 0) {
+    arma::uvec assigned = find(segmentation > 0);
+    arma::mat unassigned_xy = points.submat(unassigned, arma::uvec{0, 1});
+    arma::mat assigned_xy = points.submat(assigned, arma::uvec{0, 1});
+    
+    arma::uvec nn_indices(unassigned.n_elem);
+    
+    // Efficient brute force with squared distances
+    for (arma::uword i = 0; i < unassigned.n_elem; i++) {
+      double min_dist_sq = std::numeric_limits<double>::max();
+      arma::uword best_idx = 0;
+      
+      for (arma::uword j = 0; j < assigned.n_elem; j++) {
+        double dx = unassigned_xy(i, 0) - assigned_xy(j, 0);
+        double dy = unassigned_xy(i, 1) - assigned_xy(j, 1);
+        double dist_sq = dx * dx + dy * dy;
+        
+        if (dist_sq < min_dist_sq) {
+          min_dist_sq = dist_sq;
+          best_idx = j;
+          // Early termination for very close points
+          if (min_dist_sq < 0.01) break;
+        }
+      }
+      nn_indices(i) = best_idx;
+    }
+    
+    segmentation(unassigned) = segmentation(assigned(nn_indices));
+  }
+  
+  return segmentation;
 }

@@ -10,7 +10,8 @@ TTS_segmentation(
   clip_height = 0.5,
   max_distance = 2,
   grid_size = 5,
-  cores = 12
+  cores = 12,
+  spatial_threshold = 1.5
 )
 }
 \arguments{
