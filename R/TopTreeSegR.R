@@ -156,7 +156,7 @@ build_gradient_flow_ultra <- function(morse_complex, vertices, max_distance = 2.
   # ULTRA-FAST: Compute ascending regions
   message("  [Armadillo] Computing ascending regions...\n")
   ascend_time = system.time({
-    ascending_regions = compute_ascending_regions_fast(gradient_network, minima_arma, nrow(vertices))
+    ascending_regions = compute_ascending_regions(gradient_network, minima_arma, nrow(vertices))
   })
   
   # ULTRA-FAST: Build minima connectivity with spatial hashing

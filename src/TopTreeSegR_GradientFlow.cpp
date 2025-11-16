@@ -259,9 +259,9 @@ List parse_gradient_network_fast(const std::vector<std::string>& vector_field,
 
 // PROPER ascending regions with NO BASIN MERGING
 // [[Rcpp::export]]
-arma::uvec compute_ascending_regions_fast_optimized(const List& gradient_network, 
-                                                    const arma::uvec& minima, 
-                                                    arma::uword n_vertices) {
+arma::uvec compute_ascending_regions(const List& gradient_network, 
+                                     const arma::uvec& minima, 
+                                     arma::uword n_vertices) {
   arma::uvec ascending_regions = zeros<arma::uvec>(n_vertices);
   arma::uvec vertex_flow = gradient_network["vertex_flow"];
   
