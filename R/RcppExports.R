@@ -25,7 +25,7 @@ build_minima_connectivity_spatial <- function(minima, vertices, max_distance = 2
     .Call(`_TopTreeSegR_build_minima_connectivity_spatial`, minima, vertices, max_distance, grid_size)
 }
 
-assign_regions_to_trees <- function(ascending_regions, seed_minima, seed_labels, points, spatial_threshold = 3.0) {
-    .Call(`_TopTreeSegR_assign_regions_to_trees`, ascending_regions, seed_minima, seed_labels, points, spatial_threshold)
+assign_regions_to_trees <- function(ascending_regions, seed_minima, seed_labels, points) {
+    .Call(`_TopTreeSegR_assign_regions_to_trees`, ascending_regions, seed_minima, seed_labels, points)
 }
 

@@ -10,12 +10,11 @@ TTS_segmentation(
   clip_height = 0.5,
   max_distance = 2,
   grid_size = 5,
-  cores = 12,
-  spatial_threshold = 1.5
+  cores = 12
 )
 }
 \arguments{
-\item{lasdf}{Input point cloud in las/laz format}
+\item{lasdf}{Input point cloud in LAS, data frame, or matrix format}
 
 \item{alpha}{Alpha parameter for alpha-complex construction (default: 0.1)}
 
@@ -23,7 +22,10 @@ TTS_segmentation(
 
 \item{max_distance}{Maximum distance for minima connectivity (default: 2.0)}
 
-\item{grid_size}{Grid size for spatial hashing in large datasets (default: 5.0)}
+\item{grid_size}{Grid size for spatial hashing in large datasets. Should be
+larger than \code{max_distance} to ensure all potential connections are checked.
+Smaller values = more accurate but slower, larger values = faster but may
+miss some connections. Recommended: 2-5 times \code{max_distance}. (default: 5.0)}
 
 \item{cores}{Number of cores to use for Morse complex computation (default: 12)}
 }

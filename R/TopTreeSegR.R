@@ -36,11 +36,14 @@ NULL
 
 #' Ultra-Fast Tree Segmentation from LiDAR Point Clouds
 #'
-#' @param lasdf Input point cloud in las/laz format
+#' @param lasdf Input point cloud in LAS, data frame, or matrix format
 #' @param alpha Alpha parameter for alpha-complex construction (default: 0.1)
 #' @param clip_height Height threshold for detecting stem seeds (default: 0.5)
 #' @param max_distance Maximum distance for minima connectivity (default: 2.0)
-#' @param grid_size Grid size for spatial hashing in large datasets (default: 5.0)
+#' @param grid_size Grid size for spatial hashing in large datasets. Should be 
+#'   larger than `max_distance` to ensure all potential connections are checked.
+#'   Smaller values = more accurate but slower, larger values = faster but may
+#'   miss some connections. Recommended: 2-5 times `max_distance`. (default: 5.0)
 #' @param cores Number of cores to use for Morse complex computation (default: 12)
 #' 
 #' @return A list containing:
@@ -67,7 +70,7 @@ NULL
 #' }
 TTS_segmentation <- function(lasdf, alpha = 0.1, clip_height = 0.5, 
                              max_distance = 2.0, grid_size = 5.0, 
-                             cores = 12, spatial_threshold = 1.5) {
+                             cores = 12) {
   
   # Check dependencies
   .check_dependencies()
@@ -103,8 +106,7 @@ TTS_segmentation <- function(lasdf, alpha = 0.1, clip_height = 0.5,
   # Step 3: ULTRA-FAST gradient flow with Armadillo
   message("3. Building ULTRA-FAST gradient flow...\n")
   gradient_flow = build_gradient_flow_ultra(morse_complex, mesh$vertices, 
-                                            max_distance, grid_size,
-                                            spatial_threshold)
+                                            max_distance, grid_size)
   
   # Step 4: Detect tree seeds
   message("4. Detecting tree seeds...\n")
@@ -112,7 +114,7 @@ TTS_segmentation <- function(lasdf, alpha = 0.1, clip_height = 0.5,
   
   # Step 5: Propagate labels
   message("5. Propagating labels...\n")
-  labeled_data = propagate_labels_constrained(gradient_flow, seeds, mesh$vertices, spatial_threshold)
+  labeled_data = propagate_labels_constrained(gradient_flow, seeds, mesh$vertices)
   
   # Step 6: Create segmentation
   message("6. Creating final segmentation...\n")
@@ -134,8 +136,7 @@ TTS_segmentation <- function(lasdf, alpha = 0.1, clip_height = 0.5,
 #' 
 #' @keywords internal
 build_gradient_flow_ultra <- function(morse_complex, vertices, 
-                                      max_distance = 2.0, grid_size = 5.0,
-                                      spatial_threshold = 2.0) {
+                                      max_distance = 2.0, grid_size = 5.0) {
   message("  Building ULTRA-FAST gradient flow with Armadillo...\n")
   
   # Extract minima using C++ implementation
@@ -235,7 +236,7 @@ detect_tree_seeds_proper <- function(minima, vertices, clip_height) {
 #' Propagate Labels via Gradient Flow
 #' 
 #' @keywords internal
-propagate_labels_constrained <- function(gradient_flow, seeds, vertices, spatial_threshold = 2.0) {
+propagate_labels_constrained <- function(gradient_flow, seeds, vertices) {
   message("  [C++] Spatial-constrained region to tree assignment...\n")
   
   # Call the C++ function with spatial constraints
@@ -243,8 +244,7 @@ propagate_labels_constrained <- function(gradient_flow, seeds, vertices, spatial
     gradient_flow$ascending_regions,
     seeds$seed_minima, 
     seeds$seed_labels,
-    vertices,
-    spatial_threshold = spatial_threshold  
+    vertices
   )
   
   message("  Spatial-constrained label distribution:\n")

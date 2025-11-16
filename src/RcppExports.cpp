@@ -89,8 +89,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // assign_regions_to_trees
-arma::uvec assign_regions_to_trees(const arma::uvec& ascending_regions, const arma::uvec& seed_minima, const arma::uvec& seed_labels, const arma::mat& points, double spatial_threshold);
-RcppExport SEXP _TopTreeSegR_assign_regions_to_trees(SEXP ascending_regionsSEXP, SEXP seed_minimaSEXP, SEXP seed_labelsSEXP, SEXP pointsSEXP, SEXP spatial_thresholdSEXP) {
+arma::uvec assign_regions_to_trees(const arma::uvec& ascending_regions, const arma::uvec& seed_minima, const arma::uvec& seed_labels, const arma::mat& points);
+RcppExport SEXP _TopTreeSegR_assign_regions_to_trees(SEXP ascending_regionsSEXP, SEXP seed_minimaSEXP, SEXP seed_labelsSEXP, SEXP pointsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -98,8 +98,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const arma::uvec& >::type seed_minima(seed_minimaSEXP);
     Rcpp::traits::input_parameter< const arma::uvec& >::type seed_labels(seed_labelsSEXP);
     Rcpp::traits::input_parameter< const arma::mat& >::type points(pointsSEXP);
-    Rcpp::traits::input_parameter< double >::type spatial_threshold(spatial_thresholdSEXP);
-    rcpp_result_gen = Rcpp::wrap(assign_regions_to_trees(ascending_regions, seed_minima, seed_labels, points, spatial_threshold));
+    rcpp_result_gen = Rcpp::wrap(assign_regions_to_trees(ascending_regions, seed_minima, seed_labels, points));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -111,7 +110,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_TopTreeSegR_compute_ascending_regions_fast", (DL_FUNC) &_TopTreeSegR_compute_ascending_regions_fast, 3},
     {"_TopTreeSegR_build_minima_connectivity_fast", (DL_FUNC) &_TopTreeSegR_build_minima_connectivity_fast, 3},
     {"_TopTreeSegR_build_minima_connectivity_spatial", (DL_FUNC) &_TopTreeSegR_build_minima_connectivity_spatial, 4},
-    {"_TopTreeSegR_assign_regions_to_trees", (DL_FUNC) &_TopTreeSegR_assign_regions_to_trees, 5},
+    {"_TopTreeSegR_assign_regions_to_trees", (DL_FUNC) &_TopTreeSegR_assign_regions_to_trees, 4},
     {NULL, NULL, 0}
 };
 

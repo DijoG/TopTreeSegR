@@ -4,12 +4,7 @@
 \alias{propagate_labels_constrained}
 \title{Propagate Labels via Gradient Flow}
 \usage{
-propagate_labels_constrained(
-  gradient_flow,
-  seeds,
-  vertices,
-  spatial_threshold = 2
-)
+propagate_labels_constrained(gradient_flow, seeds, vertices)
 }
 \description{
 Propagate Labels via Gradient Flow

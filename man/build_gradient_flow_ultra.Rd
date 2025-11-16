@@ -8,8 +8,7 @@ build_gradient_flow_ultra(
   morse_complex,
   vertices,
   max_distance = 2,
-  grid_size = 5,
-  spatial_threshold = 2
+  grid_size = 5
 )
 }
 \description{

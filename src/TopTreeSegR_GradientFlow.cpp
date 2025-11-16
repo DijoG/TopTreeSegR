@@ -403,106 +403,24 @@ List build_minima_connectivity_spatial(const arma::uvec& minima,
   return adjacency;
 }
 
-// Spatial-constrained region to tree assignment 
+// Remove spatial_threshold from C++ function
 // [[Rcpp::export]]
 arma::uvec assign_regions_to_trees(const arma::uvec& ascending_regions,
                                    const arma::uvec& seed_minima,
                                    const arma::uvec& seed_labels, 
-                                   const arma::mat& points,
-                                   double spatial_threshold = 3.0) {
+                                   const arma::mat& points) {  
   
   arma::uword n_points = points.n_rows;
   arma::uvec segmentation = zeros<arma::uvec>(n_points);
   
   if (seed_minima.n_elem == 0) return segmentation;
   
-  // Precompute seed coordinates once
-  arma::mat seed_coords = points.submat(seed_minima, arma::uvec{0, 1});
-  double threshold_sq = spatial_threshold * spatial_threshold; // Use squared distance
-  
-  // Step 1: Process regions efficiently
-  std::vector<arma::uword> region_ids;
-  std::vector<arma::rowvec> region_centers;
-  
-  // Reserve memory to avoid reallocations
-  region_ids.reserve(10000);
-  region_centers.reserve(10000);
-  
-  for (arma::uword reg_id = 1; reg_id <= arma::max(ascending_regions); reg_id++) {
-    arma::uvec region_points = find(ascending_regions == reg_id);
-    
-    if (region_points.n_elem > 0) {
-      region_ids.push_back(reg_id);
-      // Fast center calculation using column-wise mean
-      arma::mat region_xy = points.submat(region_points, arma::uvec{0, 1});
-      region_centers.push_back(mean(region_xy, 0));
-    }
-  }
-  
-  // Step 2: Efficient distance calculation
-  arma::uvec region_to_tree = zeros<arma::uvec>(arma::max(ascending_regions) + 1);
-  
-  for (size_t i = 0; i < region_centers.size(); i++) {
-    double min_dist_sq = std::numeric_limits<double>::max();
-    arma::uword best_seed = 0;
-    
-    // Fast distance computation with early termination
-    for (arma::uword j = 0; j < seed_coords.n_rows; j++) {
-      double dx = region_centers[i](0) - seed_coords(j, 0);
-      double dy = region_centers[i](1) - seed_coords(j, 1);
-      double dist_sq = dx * dx + dy * dy;
-      
-      if (dist_sq < min_dist_sq) {
-        min_dist_sq = dist_sq;
-        best_seed = j;
-        // Early termination if we find a very close seed
-        if (min_dist_sq < 0.1) break;
-      }
-    }
-    
-    if (min_dist_sq <= threshold_sq) {
-      region_to_tree(region_ids[i]) = seed_labels(best_seed);
-    }
-  }
-  
-  // Step 3: Fast segmentation assignment
+  // Simple assignment: each region gets the label of its connected seed
   for (arma::uword i = 0; i < n_points; i++) {
     arma::uword region_id = ascending_regions(i);
-    if (region_id > 0) {
-      segmentation(i) = region_to_tree(region_id);
+    if (region_id > 0 && region_id <= seed_labels.n_elem) {
+      segmentation(i) = seed_labels(region_id - 1);  // -1 for 0-based indexing
     }
-  }
-  
-  // Step 4: Optimized unassigned point handling
-  arma::uvec unassigned = find(segmentation == 0);
-  if (unassigned.n_elem > 0) {
-    arma::uvec assigned = find(segmentation > 0);
-    arma::mat unassigned_xy = points.submat(unassigned, arma::uvec{0, 1});
-    arma::mat assigned_xy = points.submat(assigned, arma::uvec{0, 1});
-    
-    arma::uvec nn_indices(unassigned.n_elem);
-    
-    // Efficient brute force with squared distances
-    for (arma::uword i = 0; i < unassigned.n_elem; i++) {
-      double min_dist_sq = std::numeric_limits<double>::max();
-      arma::uword best_idx = 0;
-      
-      for (arma::uword j = 0; j < assigned.n_elem; j++) {
-        double dx = unassigned_xy(i, 0) - assigned_xy(j, 0);
-        double dy = unassigned_xy(i, 1) - assigned_xy(j, 1);
-        double dist_sq = dx * dx + dy * dy;
-        
-        if (dist_sq < min_dist_sq) {
-          min_dist_sq = dist_sq;
-          best_idx = j;
-          // Early termination for very close points
-          if (min_dist_sq < 0.01) break;
-        }
-      }
-      nn_indices(i) = best_idx;
-    }
-    
-    segmentation(unassigned) = segmentation(assigned(nn_indices));
   }
   
   return segmentation;
