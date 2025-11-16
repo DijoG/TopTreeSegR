@@ -577,17 +577,25 @@ List build_minima_connectivity_optimized_vpath_cpp(const std::vector<std::string
   arma::uword n_minima = minima.n_elem;
   std::vector<std::vector<arma::uword>> adjacency(n_minima);
   
-  Rcpp::Rcout << "  [C++] Building minima connectivity (PAPER EXACT METHOD)..." << std::endl;
+  Rcpp::Rcout << "  [C++] Building minima connectivity (BIDIRECTIONAL METHOD)..." << std::endl;
   
-  // Step 1: Build forward flow map (vertex → edges it flows to)
-  std::unordered_map<arma::uword, std::vector<arma::uword>> vertex_to_edges;
+  // Step 1: Extract 1-saddles (critical edges with 2 vertices)
+  std::vector<std::vector<arma::uword>> saddle_edges;
+  for (const auto& simplex_str : critical_simplices) {
+    std::vector<arma::uword> vertices = parse_simplex_vertices_cpp(simplex_str);
+    if (vertices.size() == 2) {
+      saddle_edges.push_back(vertices);
+    }
+  }
   
-  // Step 2: Build reverse flow map (edge vertex → source vertices that flow to it)
-  std::unordered_map<arma::uword, std::vector<arma::uword>> edge_to_sources;
+  Rcpp::Rcout << "  [C++] Found " << saddle_edges.size() << " 1-saddles" << std::endl;
   
-  Rcpp::Rcout << "  [C++] Parsing vector field to build flow maps..." << std::endl;
+  // Step 2: Build fast lookup maps
+  // Map: vertex → edges it flows to (forward gradient)
+  std::unordered_map<arma::uword, std::vector<arma::uword>> forward_flow;
+  // Map: edge vertex → source vertices that flow to it (reverse gradient)  
+  std::unordered_map<arma::uword, std::vector<arma::uword>> reverse_flow;
   
-  // Step 3: Parse vector field to build both maps
   for (const auto& line : vector_field) {
     size_t colon_pos = line.find(':');
     if (colon_pos == std::string::npos) continue;
@@ -598,68 +606,80 @@ List build_minima_connectivity_optimized_vpath_cpp(const std::vector<std::string
     std::vector<arma::uword> left_verts = parse_simplex_vertices_cpp(left);
     std::vector<arma::uword> right_verts = parse_simplex_vertices_cpp(right);
     
-    // Vertex → Edge pairs
     if (left_verts.size() == 1 && right_verts.size() == 2) {
-      arma::uword source_vertex = left_verts[0];
+      arma::uword source = left_verts[0];
       arma::uword edge_v1 = right_verts[0];
       arma::uword edge_v2 = right_verts[1];
       
-      // Source vertex flows to these edge vertices
-      vertex_to_edges[source_vertex].push_back(edge_v1);
-      vertex_to_edges[source_vertex].push_back(edge_v2);
+      forward_flow[source].push_back(edge_v1);
+      forward_flow[source].push_back(edge_v2);
       
-      // Edge vertices can be reached from this source
-      edge_to_sources[edge_v1].push_back(source_vertex);
-      edge_to_sources[edge_v2].push_back(source_vertex);
+      reverse_flow[edge_v1].push_back(source);
+      reverse_flow[edge_v2].push_back(source);
     }
   }
   
-  Rcpp::Rcout << "  [C++] Built flow maps - vertex_to_edges: " << vertex_to_edges.size() 
-              << ", edge_to_sources: " << edge_to_sources.size() << std::endl;
+  Rcpp::Rcout << "  [C++] Built flow maps" << std::endl;
   
-  // Step 4: Extract 1-saddles (critical edges)
-  std::vector<std::vector<arma::uword>> saddle_edges;
-  for (const auto& simplex_str : critical_simplices) {
-    std::vector<arma::uword> vertices = parse_simplex_vertices_cpp(simplex_str);
-    if (vertices.size() == 2) {
-      saddle_edges.push_back(vertices);
-    }
-  }
-  
-  Rcpp::Rcout << "  [C++] Found " << saddle_edges.size() << " 1-saddle edges" << std::endl;
-  
-  // Step 5: For each saddle edge, find all minima connected to it via V-paths
-  arma::uword total_connections = 0;
+  // Step 3: For each 1-saddle, find connected minima via BOTH directions
+  arma::uword connections_found = 0;
   
   for (const auto& saddle_edge : saddle_edges) {
-    std::unordered_set<arma::uword> connected_minima_indices;
+    std::unordered_set<arma::uword> connected_minima;
     
-    // For each vertex in the saddle edge, find connected minima
+    // For each vertex in the saddle edge
     for (arma::uword saddle_vertex : saddle_edge) {
-      // Use BFS to find all minima that can reach this saddle vertex
-      std::queue<arma::uword> to_process;
-      std::unordered_set<arma::uword> visited;
+      // Direction 1: From saddle vertex FOLLOW FORWARD flow to find minima
+      std::queue<arma::uword> forward_queue;
+      std::unordered_set<arma::uword> forward_visited;
       
-      to_process.push(saddle_vertex);
-      visited.insert(saddle_vertex);
+      forward_queue.push(saddle_vertex);
+      forward_visited.insert(saddle_vertex);
       
-      while (!to_process.empty()) {
-        arma::uword current = to_process.front();
-        to_process.pop();
+      while (!forward_queue.empty()) {
+        arma::uword current = forward_queue.front();
+        forward_queue.pop();
         
         // Check if current is a minimum
         arma::uvec min_match = find(minima == current);
         if (min_match.n_elem > 0) {
-          connected_minima_indices.insert(min_match(0));
-          continue; // Stop at minima - don't continue V-path from minima
+          connected_minima.insert(min_match(0));
         }
         
-        // Follow reverse flow: find sources that flow to current vertex
-        if (edge_to_sources.find(current) != edge_to_sources.end()) {
-          for (arma::uword source : edge_to_sources[current]) {
-            if (visited.find(source) == visited.end()) {
-              visited.insert(source);
-              to_process.push(source);
+        // Follow forward flow
+        if (forward_flow.find(current) != forward_flow.end()) {
+          for (arma::uword next_vertex : forward_flow[current]) {
+            if (forward_visited.find(next_vertex) == forward_visited.end()) {
+              forward_visited.insert(next_vertex);
+              forward_queue.push(next_vertex);
+            }
+          }
+        }
+      }
+      
+      // Direction 2: From saddle vertex FOLLOW REVERSE flow to find minima  
+      std::queue<arma::uword> reverse_queue;
+      std::unordered_set<arma::uword> reverse_visited;
+      
+      reverse_queue.push(saddle_vertex);
+      reverse_visited.insert(saddle_vertex);
+      
+      while (!reverse_queue.empty()) {
+        arma::uword current = reverse_queue.front();
+        reverse_queue.pop();
+        
+        // Check if current is a minimum
+        arma::uvec min_match = find(minima == current);
+        if (min_match.n_elem > 0) {
+          connected_minima.insert(min_match(0));
+        }
+        
+        // Follow reverse flow
+        if (reverse_flow.find(current) != reverse_flow.end()) {
+          for (arma::uword prev_vertex : reverse_flow[current]) {
+            if (reverse_visited.find(prev_vertex) == reverse_visited.end()) {
+              reverse_visited.insert(prev_vertex);
+              reverse_queue.push(prev_vertex);
             }
           }
         }
@@ -667,16 +687,15 @@ List build_minima_connectivity_optimized_vpath_cpp(const std::vector<std::string
     }
     
     // Connect all minima found through this saddle
-    std::vector<arma::uword> minima_list(connected_minima_indices.begin(), connected_minima_indices.end());
+    std::vector<arma::uword> minima_list(connected_minima.begin(), connected_minima.end());
     
     if (minima_list.size() >= 2) {
-      total_connections++;
+      connections_found++;
       for (size_t i = 0; i < minima_list.size(); i++) {
         for (size_t j = i + 1; j < minima_list.size(); j++) {
           arma::uword idx1 = minima_list[i];
           arma::uword idx2 = minima_list[j];
           
-          // Add bidirectional connection
           if (std::find(adjacency[idx1].begin(), adjacency[idx1].end(), idx2) == adjacency[idx1].end()) {
             adjacency[idx1].push_back(idx2);
           }
@@ -688,9 +707,8 @@ List build_minima_connectivity_optimized_vpath_cpp(const std::vector<std::string
     }
   }
   
-  Rcpp::Rcout << "  [C++] Paper method complete - " << total_connections 
-              << " saddles connected minima, avg degree: " 
-              << (total_connections * 2.0 / n_minima) << std::endl;
+  Rcpp::Rcout << "  [C++] Bidirectional method complete - " << connections_found 
+              << "/" << saddle_edges.size() << " saddles connected minima" << std::endl;
   
   // Convert to R list
   List adjacency_r(n_minima);
