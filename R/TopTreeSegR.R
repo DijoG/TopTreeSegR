@@ -17,7 +17,7 @@ NULL
 }
 
 .check_dependencies <- function() {
-  required_pkgs <- c("DiscreteMorseR", "AlphaHull3D", "dbscan", "ggplot2", "FNN")
+  required_pkgs <- c("DiscreteMorseR", "AlphaHull3D", "dbscan", "ggplot2", "FNN", "dplyr")
   missing_pkgs <- required_pkgs[!sapply(required_pkgs, requireNamespace, quietly = TRUE)]
   
   if (length(missing_pkgs) > 0) {
