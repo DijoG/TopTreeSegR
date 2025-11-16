@@ -166,9 +166,11 @@ std::vector<arma::uword> parse_simplex_vertices_fast(const std::string& str) {
   return vertices;
 }
 
-// Optimized gradient network parsing
+// Optimized gradient network parsing WITH ELEVATION SUPPORT
 // [[Rcpp::export]]
-List parse_gradient_network_fast(const std::vector<std::string>& vector_field, arma::uword n_vertices) {
+List parse_gradient_network_fast(const std::vector<std::string>& vector_field, 
+                                 const arma::vec& elevations,
+                                 arma::uword n_vertices) {
   // Pre-allocate for performance
   std::vector<std::vector<arma::uvec>> vertex_to_edge(n_vertices + 1);
   arma::uvec vertex_flow = zeros<arma::uvec>(n_vertices + 1);
@@ -194,8 +196,18 @@ List parse_gradient_network_fast(const std::vector<std::string>& vector_field, a
         arma::uvec edge_verts = { right_verts[0], right_verts[1] };
         vertex_to_edge[vertex_id].push_back(edge_verts);
         
+        // FIX: Use elevation to determine correct flow direction
         if (vertex_flow(vertex_id) == 0) {
-          vertex_flow(vertex_id) = right_verts[0];
+          // Get elevations for both potential targets
+          double elev1 = elevations(right_verts[0] - 1);  // 0-based indexing
+          double elev2 = elevations(right_verts[1] - 1);
+          
+          // Flow to the vertex with LOWER elevation (downhill)
+          if (elev1 < elev2) {
+            vertex_flow(vertex_id) = right_verts[0];
+          } else {
+            vertex_flow(vertex_id) = right_verts[1];
+          }
         }
         
         vertex_pair_count++;

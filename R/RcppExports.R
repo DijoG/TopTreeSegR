@@ -9,8 +9,8 @@ extract_minima_corrected_cpp <- function(morse_complex, vertices, temp_dir = "")
     .Call(`_TopTreeSegR_extract_minima_corrected_cpp`, morse_complex, vertices, temp_dir)
 }
 
-parse_gradient_network_fast <- function(vector_field, n_vertices) {
-    .Call(`_TopTreeSegR_parse_gradient_network_fast`, vector_field, n_vertices)
+parse_gradient_network_fast <- function(vector_field, elevations, n_vertices) {
+    .Call(`_TopTreeSegR_parse_gradient_network_fast`, vector_field, elevations, n_vertices)
 }
 
 compute_ascending_regions_fast <- function(gradient_network, minima, n_vertices) {

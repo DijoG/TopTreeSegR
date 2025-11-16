@@ -36,14 +36,15 @@ BEGIN_RCPP
 END_RCPP
 }
 // parse_gradient_network_fast
-List parse_gradient_network_fast(const std::vector<std::string>& vector_field, arma::uword n_vertices);
-RcppExport SEXP _TopTreeSegR_parse_gradient_network_fast(SEXP vector_fieldSEXP, SEXP n_verticesSEXP) {
+List parse_gradient_network_fast(const std::vector<std::string>& vector_field, const arma::vec& elevations, arma::uword n_vertices);
+RcppExport SEXP _TopTreeSegR_parse_gradient_network_fast(SEXP vector_fieldSEXP, SEXP elevationsSEXP, SEXP n_verticesSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const std::vector<std::string>& >::type vector_field(vector_fieldSEXP);
+    Rcpp::traits::input_parameter< const arma::vec& >::type elevations(elevationsSEXP);
     Rcpp::traits::input_parameter< arma::uword >::type n_vertices(n_verticesSEXP);
-    rcpp_result_gen = Rcpp::wrap(parse_gradient_network_fast(vector_field, n_vertices));
+    rcpp_result_gen = Rcpp::wrap(parse_gradient_network_fast(vector_field, elevations, n_vertices));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -91,7 +92,7 @@ END_RCPP
 static const R_CallMethodDef CallEntries[] = {
     {"_TopTreeSegR_parse_simplex_vertices_cpp", (DL_FUNC) &_TopTreeSegR_parse_simplex_vertices_cpp, 1},
     {"_TopTreeSegR_extract_minima_corrected_cpp", (DL_FUNC) &_TopTreeSegR_extract_minima_corrected_cpp, 3},
-    {"_TopTreeSegR_parse_gradient_network_fast", (DL_FUNC) &_TopTreeSegR_parse_gradient_network_fast, 2},
+    {"_TopTreeSegR_parse_gradient_network_fast", (DL_FUNC) &_TopTreeSegR_parse_gradient_network_fast, 3},
     {"_TopTreeSegR_compute_ascending_regions_fast", (DL_FUNC) &_TopTreeSegR_compute_ascending_regions_fast, 3},
     {"_TopTreeSegR_build_minima_connectivity_fast", (DL_FUNC) &_TopTreeSegR_build_minima_connectivity_fast, 3},
     {"_TopTreeSegR_build_minima_connectivity_spatial", (DL_FUNC) &_TopTreeSegR_build_minima_connectivity_spatial, 4},
