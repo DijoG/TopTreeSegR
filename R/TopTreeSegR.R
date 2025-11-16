@@ -585,8 +585,7 @@ build_gradient_flow_ultra_paper <- function(morse_complex, vertices, max_distanc
     minima_connectivity = build_minima_connectivity_optimized_vpath_cpp(
       morse_complex$critical,
       morse_complex$vector_field,
-      minima_arma,
-      200  # max_vpath_length = 100 steps
+      minima_arma
     )
   })
   
