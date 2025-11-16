@@ -33,7 +33,7 @@ propagate_labels_minima_graph_cpp <- function(minima_graph, seed_indices, seed_l
     .Call(`_TopTreeSegR_propagate_labels_minima_graph_cpp`, minima_graph, seed_indices, seed_labels, elevations, n_minima)
 }
 
-build_minima_connectivity_optimized_vpath_cpp <- function(critical_simplices, vector_field, minima, max_vpath_length = 100L) {
-    .Call(`_TopTreeSegR_build_minima_connectivity_optimized_vpath_cpp`, critical_simplices, vector_field, minima, max_vpath_length)
+build_minima_connectivity_optimized_vpath_cpp <- function(critical_simplices, vector_field, minima) {
+    .Call(`_TopTreeSegR_build_minima_connectivity_optimized_vpath_cpp`, critical_simplices, vector_field, minima)
 }
 
