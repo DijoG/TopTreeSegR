@@ -9,19 +9,19 @@ extract_minima_corrected_cpp <- function(morse_complex, vertices, temp_dir = "")
     .Call(`_TopTreeSegR_extract_minima_corrected_cpp`, morse_complex, vertices, temp_dir)
 }
 
-parse_gradient_network_fast <- function(vector_field, elevations, n_vertices) {
-    .Call(`_TopTreeSegR_parse_gradient_network_fast`, vector_field, elevations, n_vertices)
+parse_gradient_network_fast_cpp <- function(vector_field, elevations, n_vertices) {
+    .Call(`_TopTreeSegR_parse_gradient_network_fast_cpp`, vector_field, elevations, n_vertices)
 }
 
-compute_ascending_regions <- function(gradient_network, minima, n_vertices) {
-    .Call(`_TopTreeSegR_compute_ascending_regions`, gradient_network, minima, n_vertices)
+compute_ascending_regions_fast_cpp <- function(gradient_network, minima, n_vertices) {
+    .Call(`_TopTreeSegR_compute_ascending_regions_fast_cpp`, gradient_network, minima, n_vertices)
 }
 
-build_minima_connectivity_fast <- function(minima, vertices, max_distance = 2.0) {
-    .Call(`_TopTreeSegR_build_minima_connectivity_fast`, minima, vertices, max_distance)
+build_minima_connectivity_fast_cpp <- function(minima, vertices, max_distance = 2.0) {
+    .Call(`_TopTreeSegR_build_minima_connectivity_fast_cpp`, minima, vertices, max_distance)
 }
 
-build_minima_connectivity_spatial <- function(minima, vertices, max_distance = 2.0, grid_size = 5.0) {
-    .Call(`_TopTreeSegR_build_minima_connectivity_spatial`, minima, vertices, max_distance, grid_size)
+build_minima_connectivity_spatial_cpp <- function(minima, vertices, max_distance = 2.0, grid_size = 5.0) {
+    .Call(`_TopTreeSegR_build_minima_connectivity_spatial_cpp`, minima, vertices, max_distance, grid_size)
 }
 

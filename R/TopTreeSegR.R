@@ -145,9 +145,9 @@ build_gradient_flow_ultra <- function(morse_complex, vertices, max_distance = 2.
   # ULTRA-FAST: Parse gradient pairs
   message("  [Armadillo] Parsing gradient pairs...\n")
   parse_time = system.time({
-    gradient_network = parse_gradient_network_fast(morse_complex$vector_field, 
-                                                   vertices[,3],     # Add elevations
-                                                   nrow(vertices))   # Add n_vertices
+    gradient_network = parse_gradient_network_fast_cpp(morse_complex$vector_field, 
+                                                       vertices[,3],     # Add elevations
+                                                       nrow(vertices))   # Add n_vertices
   })
   
   message(sprintf("  [Armadillo] Found %d vertex->edge pairs, %d edge->face pairs (%.2fs)\n",
@@ -156,7 +156,7 @@ build_gradient_flow_ultra <- function(morse_complex, vertices, max_distance = 2.
   # ULTRA-FAST: Compute ascending regions
   message("  [Armadillo] Computing ascending regions...\n")
   ascend_time = system.time({
-    ascending_regions = compute_ascending_regions(gradient_network, minima_arma, nrow(vertices))
+    ascending_regions = compute_ascending_regions_fast_cpp(gradient_network, minima_arma, nrow(vertices))
   })
   
   # ULTRA-FAST: Build minima connectivity with spatial hashing
@@ -164,11 +164,11 @@ build_gradient_flow_ultra <- function(morse_complex, vertices, max_distance = 2.
   connect_time = system.time({
     if (length(minima) > 1000) {
       # Use spatial hashing for large datasets
-      minima_connectivity = build_minima_connectivity_spatial(minima_arma, vertices_arma, 
+      minima_connectivity = build_minima_connectivity_spatial_cpp(minima_arma, vertices_arma, 
                                                               max_distance, grid_size)
     } else {
       # Use direct method for smaller datasets
-      minima_connectivity = build_minima_connectivity_fast(minima_arma, vertices_arma, max_distance)
+      minima_connectivity = build_minima_connectivity_fast_cpp(minima_arma, vertices_arma, max_distance)
     }
   })
   

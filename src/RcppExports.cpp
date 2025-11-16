@@ -35,48 +35,48 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// parse_gradient_network_fast
-List parse_gradient_network_fast(const std::vector<std::string>& vector_field, const arma::vec& elevations, arma::uword n_vertices);
-RcppExport SEXP _TopTreeSegR_parse_gradient_network_fast(SEXP vector_fieldSEXP, SEXP elevationsSEXP, SEXP n_verticesSEXP) {
+// parse_gradient_network_fast_cpp
+List parse_gradient_network_fast_cpp(const std::vector<std::string>& vector_field, const arma::vec& elevations, arma::uword n_vertices);
+RcppExport SEXP _TopTreeSegR_parse_gradient_network_fast_cpp(SEXP vector_fieldSEXP, SEXP elevationsSEXP, SEXP n_verticesSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const std::vector<std::string>& >::type vector_field(vector_fieldSEXP);
     Rcpp::traits::input_parameter< const arma::vec& >::type elevations(elevationsSEXP);
     Rcpp::traits::input_parameter< arma::uword >::type n_vertices(n_verticesSEXP);
-    rcpp_result_gen = Rcpp::wrap(parse_gradient_network_fast(vector_field, elevations, n_vertices));
+    rcpp_result_gen = Rcpp::wrap(parse_gradient_network_fast_cpp(vector_field, elevations, n_vertices));
     return rcpp_result_gen;
 END_RCPP
 }
-// compute_ascending_regions
-arma::uvec compute_ascending_regions(const List& gradient_network, const arma::uvec& minima, arma::uword n_vertices);
-RcppExport SEXP _TopTreeSegR_compute_ascending_regions(SEXP gradient_networkSEXP, SEXP minimaSEXP, SEXP n_verticesSEXP) {
+// compute_ascending_regions_fast_cpp
+arma::uvec compute_ascending_regions_fast_cpp(const List& gradient_network, const arma::uvec& minima, arma::uword n_vertices);
+RcppExport SEXP _TopTreeSegR_compute_ascending_regions_fast_cpp(SEXP gradient_networkSEXP, SEXP minimaSEXP, SEXP n_verticesSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const List& >::type gradient_network(gradient_networkSEXP);
     Rcpp::traits::input_parameter< const arma::uvec& >::type minima(minimaSEXP);
     Rcpp::traits::input_parameter< arma::uword >::type n_vertices(n_verticesSEXP);
-    rcpp_result_gen = Rcpp::wrap(compute_ascending_regions(gradient_network, minima, n_vertices));
+    rcpp_result_gen = Rcpp::wrap(compute_ascending_regions_fast_cpp(gradient_network, minima, n_vertices));
     return rcpp_result_gen;
 END_RCPP
 }
-// build_minima_connectivity_fast
-List build_minima_connectivity_fast(const arma::uvec& minima, const arma::mat& vertices, double max_distance);
-RcppExport SEXP _TopTreeSegR_build_minima_connectivity_fast(SEXP minimaSEXP, SEXP verticesSEXP, SEXP max_distanceSEXP) {
+// build_minima_connectivity_fast_cpp
+List build_minima_connectivity_fast_cpp(const arma::uvec& minima, const arma::mat& vertices, double max_distance);
+RcppExport SEXP _TopTreeSegR_build_minima_connectivity_fast_cpp(SEXP minimaSEXP, SEXP verticesSEXP, SEXP max_distanceSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const arma::uvec& >::type minima(minimaSEXP);
     Rcpp::traits::input_parameter< const arma::mat& >::type vertices(verticesSEXP);
     Rcpp::traits::input_parameter< double >::type max_distance(max_distanceSEXP);
-    rcpp_result_gen = Rcpp::wrap(build_minima_connectivity_fast(minima, vertices, max_distance));
+    rcpp_result_gen = Rcpp::wrap(build_minima_connectivity_fast_cpp(minima, vertices, max_distance));
     return rcpp_result_gen;
 END_RCPP
 }
-// build_minima_connectivity_spatial
-List build_minima_connectivity_spatial(const arma::uvec& minima, const arma::mat& vertices, double max_distance, double grid_size);
-RcppExport SEXP _TopTreeSegR_build_minima_connectivity_spatial(SEXP minimaSEXP, SEXP verticesSEXP, SEXP max_distanceSEXP, SEXP grid_sizeSEXP) {
+// build_minima_connectivity_spatial_cpp
+List build_minima_connectivity_spatial_cpp(const arma::uvec& minima, const arma::mat& vertices, double max_distance, double grid_size);
+RcppExport SEXP _TopTreeSegR_build_minima_connectivity_spatial_cpp(SEXP minimaSEXP, SEXP verticesSEXP, SEXP max_distanceSEXP, SEXP grid_sizeSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -84,7 +84,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const arma::mat& >::type vertices(verticesSEXP);
     Rcpp::traits::input_parameter< double >::type max_distance(max_distanceSEXP);
     Rcpp::traits::input_parameter< double >::type grid_size(grid_sizeSEXP);
-    rcpp_result_gen = Rcpp::wrap(build_minima_connectivity_spatial(minima, vertices, max_distance, grid_size));
+    rcpp_result_gen = Rcpp::wrap(build_minima_connectivity_spatial_cpp(minima, vertices, max_distance, grid_size));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -92,10 +92,10 @@ END_RCPP
 static const R_CallMethodDef CallEntries[] = {
     {"_TopTreeSegR_parse_simplex_vertices_cpp", (DL_FUNC) &_TopTreeSegR_parse_simplex_vertices_cpp, 1},
     {"_TopTreeSegR_extract_minima_corrected_cpp", (DL_FUNC) &_TopTreeSegR_extract_minima_corrected_cpp, 3},
-    {"_TopTreeSegR_parse_gradient_network_fast", (DL_FUNC) &_TopTreeSegR_parse_gradient_network_fast, 3},
-    {"_TopTreeSegR_compute_ascending_regions", (DL_FUNC) &_TopTreeSegR_compute_ascending_regions, 3},
-    {"_TopTreeSegR_build_minima_connectivity_fast", (DL_FUNC) &_TopTreeSegR_build_minima_connectivity_fast, 3},
-    {"_TopTreeSegR_build_minima_connectivity_spatial", (DL_FUNC) &_TopTreeSegR_build_minima_connectivity_spatial, 4},
+    {"_TopTreeSegR_parse_gradient_network_fast_cpp", (DL_FUNC) &_TopTreeSegR_parse_gradient_network_fast_cpp, 3},
+    {"_TopTreeSegR_compute_ascending_regions_fast_cpp", (DL_FUNC) &_TopTreeSegR_compute_ascending_regions_fast_cpp, 3},
+    {"_TopTreeSegR_build_minima_connectivity_fast_cpp", (DL_FUNC) &_TopTreeSegR_build_minima_connectivity_fast_cpp, 3},
+    {"_TopTreeSegR_build_minima_connectivity_spatial_cpp", (DL_FUNC) &_TopTreeSegR_build_minima_connectivity_spatial_cpp, 4},
     {NULL, NULL, 0}
 };
 

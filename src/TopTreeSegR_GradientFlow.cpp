@@ -1,4 +1,4 @@
-// TopTreeSegR_GradientFlow.cpp
+// TopTreeSegR_GradientFlow.cpp - CORRECTED VERSION with consistent _cpp suffix
 #include <RcppArmadillo.h>
 #include <vector>
 #include <string>
@@ -17,7 +17,6 @@ using namespace arma;
 std::vector<arma::uword> parse_simplex_vertices_cpp(const std::string& simplex_str) {
   std::vector<arma::uword> vertices;
   
-  // Remove dimension info and parentheses (like the R version)
   std::string clean_str = simplex_str;
   
   // Remove "dim=[0-9]+"
@@ -138,39 +137,11 @@ arma::uvec extract_minima_corrected_cpp(const List& morse_complex,
   return arma::uvec(minima_vec);
 }
 
-// Ultra-fast parsing using manual parsing
-std::vector<arma::uword> parse_simplex_vertices_fast(const std::string& str) {
-  std::vector<arma::uword> vertices;
-  const char* cstr = str.c_str();
-  size_t len = str.length();
-  size_t i = 0;
-  
-  while (i < len) {
-    // Skip non-digits
-    while (i < len && !std::isdigit(cstr[i])) i++;
-    
-    if (i >= len) break;
-    
-    // Parse number
-    arma::uword num = 0;
-    while (i < len && std::isdigit(cstr[i])) {
-      num = num * 10 + (cstr[i] - '0');
-      i++;
-    }
-    
-    if (num > 0) {
-      vertices.push_back(num);
-    }
-  }
-  
-  return vertices;
-}
-
 // Optimized gradient network parsing WITH ELEVATION SUPPORT
 // [[Rcpp::export]]
-List parse_gradient_network_fast(const std::vector<std::string>& vector_field, 
-                                 const arma::vec& elevations,
-                                 arma::uword n_vertices) {
+List parse_gradient_network_fast_cpp(const std::vector<std::string>& vector_field, 
+                                     const arma::vec& elevations,
+                                     arma::uword n_vertices) {
   // Pre-allocate for performance
   std::vector<std::vector<arma::uvec>> vertex_to_edge(n_vertices + 1);
   arma::uvec vertex_flow = zeros<arma::uvec>(n_vertices + 1);
@@ -186,20 +157,25 @@ List parse_gradient_network_fast(const std::vector<std::string>& vector_field,
     std::string right = line.substr(colon_pos + 1);
     
     // Fast parsing
-    std::vector<arma::uword> left_verts = parse_simplex_vertices_fast(left);
-    std::vector<arma::uword> right_verts = parse_simplex_vertices_fast(right);
+    std::vector<arma::uword> left_verts = parse_simplex_vertices_cpp(left);
+    std::vector<arma::uword> right_verts = parse_simplex_vertices_cpp(right);
     
     // Vertex -> Edge pairs
     if (left_verts.size() == 1 && right_verts.size() == 2) {
       arma::uword vertex_id = left_verts[0];
-      if (vertex_id > 0 && vertex_id <= n_vertices) {
+      
+      // CRITICAL FIX: Add bounds checking
+      if (vertex_id > 0 && vertex_id <= n_vertices && 
+          right_verts[0] > 0 && right_verts[0] <= n_vertices &&
+          right_verts[1] > 0 && right_verts[1] <= n_vertices) {
+        
         arma::uvec edge_verts = { right_verts[0], right_verts[1] };
         vertex_to_edge[vertex_id].push_back(edge_verts);
         
-        // FIX: Use elevation to determine correct flow direction
+        // FIXED: Use elevation to determine correct flow direction with bounds checking
         if (vertex_flow(vertex_id) == 0) {
-          // Get elevations for both potential targets
-          double elev1 = elevations(right_verts[0] - 1);  // 0-based indexing
+          // Get elevations for both potential targets (convert to 0-based)
+          double elev1 = elevations(right_verts[0] - 1);
           double elev2 = elevations(right_verts[1] - 1);
           
           // Flow to the vertex with LOWER elevation (downhill)
@@ -259,9 +235,9 @@ List parse_gradient_network_fast(const std::vector<std::string>& vector_field,
 
 // PROPER ascending regions with NO BASIN MERGING
 // [[Rcpp::export]]
-arma::uvec compute_ascending_regions(const List& gradient_network, 
-                                     const arma::uvec& minima, 
-                                     arma::uword n_vertices) {
+arma::uvec compute_ascending_regions_fast_cpp(const List& gradient_network, 
+                                              const arma::uvec& minima, 
+                                              arma::uword n_vertices) {
   arma::uvec ascending_regions = zeros<arma::uvec>(n_vertices);
   arma::uvec vertex_flow = gradient_network["vertex_flow"];
   
@@ -270,13 +246,18 @@ arma::uvec compute_ascending_regions(const List& gradient_network,
   
   // Convert to 1-based and assign minima in one pass
   for (arma::uword i = 0; i < minima.n_elem; i++) {
-    ascending_regions(minima(i)) = i + 1; // Already 0-based
+    // CRITICAL FIX: Check bounds
+    if (minima(i) < n_vertices) {
+      ascending_regions(minima(i)) = i + 1;
+    }
   }
   
   // Use queue-based BFS for better cache performance
   std::queue<arma::uword> to_process;
   for (arma::uword i = 0; i < minima.n_elem; i++) {
-    to_process.push(minima(i));
+    if (minima(i) < n_vertices) {
+      to_process.push(minima(i));
+    }
   }
   
   while (!to_process.empty()) {
@@ -286,12 +267,14 @@ arma::uvec compute_ascending_regions(const List& gradient_network,
     
     // Process all vertices that flow to current
     // Get the reverse flow for current vertex (1-based indexing in R list)
-    arma::uvec sources = reverse_flow_list[current + 1];
-    for (arma::uword j = 0; j < sources.n_elem; j++) {
-      arma::uword source = sources(j) - 1; // Convert to 0-based
-      if (ascending_regions(source) == 0) {
-        ascending_regions(source) = current_region;
-        to_process.push(source);
+    if ((current + 1) < reverse_flow_list.size()) {
+      arma::uvec sources = reverse_flow_list[current + 1];
+      for (arma::uword j = 0; j < sources.n_elem; j++) {
+        arma::uword source = sources(j) - 1; // Convert to 0-based
+        if (source < n_vertices && ascending_regions(source) == 0) {
+          ascending_regions(source) = current_region;
+          to_process.push(source);
+        }
       }
     }
   }
@@ -301,9 +284,9 @@ arma::uvec compute_ascending_regions(const List& gradient_network,
 
 // Optimized minima connectivity
 // [[Rcpp::export]]
-List build_minima_connectivity_fast(const arma::uvec& minima, 
-                                    const arma::mat& vertices, 
-                                    double max_distance = 2.0) {
+List build_minima_connectivity_fast_cpp(const arma::uvec& minima, 
+                                        const arma::mat& vertices, 
+                                        double max_distance = 2.0) {
   arma::uword n_minima = minima.n_elem;
   
   // Extract coordinates for minima
@@ -341,10 +324,10 @@ List build_minima_connectivity_fast(const arma::uvec& minima,
 
 // Spatial hashing for large datasets
 // [[Rcpp::export]]
-List build_minima_connectivity_spatial(const arma::uvec& minima, 
-                                       const arma::mat& vertices, 
-                                       double max_distance = 2.0,
-                                       double grid_size = 5.0) {
+List build_minima_connectivity_spatial_cpp(const arma::uvec& minima, 
+                                           const arma::mat& vertices, 
+                                           double max_distance = 2.0,
+                                           double grid_size = 5.0) {
   arma::uword n_minima = minima.n_elem;
   arma::mat minima_coords(n_minima, 2);
   
