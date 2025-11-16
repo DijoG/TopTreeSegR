@@ -245,7 +245,7 @@ List parse_gradient_network_fast(const std::vector<std::string>& vector_field, a
   );
 }
 
-// Ultra-fast ascending regions
+// Ultra-fast ascending regions 
 // [[Rcpp::export]]
 arma::uvec compute_ascending_regions_fast(const List& gradient_network, 
                                           const arma::uvec& minima, 
@@ -257,25 +257,33 @@ arma::uvec compute_ascending_regions_fast(const List& gradient_network,
   // Convert minima to 1-based indexing for C++
   arma::uvec minima_1based = minima + 1;
   
+  // Use unique region IDs starting from 1
+  arma::uword region_counter = 1;
+  
   for (arma::uword min_idx = 0; min_idx < minima_1based.n_elem; min_idx++) {
     arma::uword min_vertex = minima_1based(min_idx);
     
-    std::queue<arma::uword> queue;
-    queue.push(min_vertex);
-    ascending_regions(min_vertex - 1) = min_idx + 1;  // 0-based for output
-    
-    while (!queue.empty()) {
-      arma::uword current = queue.front();
-      queue.pop();
+    // Only process if this minimum hasn't been assigned yet
+    if (ascending_regions(min_vertex - 1) == 0) {
+      std::queue<arma::uword> queue;
+      queue.push(min_vertex);
+      ascending_regions(min_vertex - 1) = region_counter;
       
-      arma::uvec sources = reverse_flow_r[current];
-      for (arma::uword j = 0; j < sources.n_elem; j++) {
-        arma::uword source = sources(j);
-        if (ascending_regions(source - 1) == 0) {
-          ascending_regions(source - 1) = min_idx + 1;
-          queue.push(source);
+      while (!queue.empty()) {
+        arma::uword current = queue.front();
+        queue.pop();
+        
+        arma::uvec sources = reverse_flow_r[current];
+        for (arma::uword j = 0; j < sources.n_elem; j++) {
+          arma::uword source = sources(j);
+          if (ascending_regions(source - 1) == 0) {
+            ascending_regions(source - 1) = region_counter;
+            queue.push(source);
+          }
         }
       }
+      
+      region_counter++;  // Increment for next unique region
     }
   }
   
