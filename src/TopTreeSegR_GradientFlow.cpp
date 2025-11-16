@@ -260,22 +260,26 @@ arma::uvec compute_ascending_regions_fast(const List& gradient_network,
   // Use unique region IDs starting from 1
   arma::uword region_counter = 1;
   
+  // Process each minimum independently
   for (arma::uword min_idx = 0; min_idx < minima_1based.n_elem; min_idx++) {
     arma::uword min_vertex = minima_1based(min_idx);
     
-    // Only process if this minimum has not been assigned yet
+    // Only process unassigned minima
     if (ascending_regions(min_vertex - 1) == 0) {
       std::queue<arma::uword> queue;
       queue.push(min_vertex);
       ascending_regions(min_vertex - 1) = region_counter;
       
+      // BFS from this minimum only
       while (!queue.empty()) {
         arma::uword current = queue.front();
         queue.pop();
         
+        // Follow reverse flow (points that flow TO current)
         arma::uvec sources = reverse_flow_r[current];
         for (arma::uword j = 0; j < sources.n_elem; j++) {
           arma::uword source = sources(j);
+          // Only assign if not already assigned to another region
           if (ascending_regions(source - 1) == 0) {
             ascending_regions(source - 1) = region_counter;
             queue.push(source);
@@ -283,10 +287,11 @@ arma::uvec compute_ascending_regions_fast(const List& gradient_network,
         }
       }
       
-      region_counter++;  // Increment for next unique region
+      region_counter++;  // Next region gets new ID
     }
   }
   
+  Rcpp::Rcout << "  [C++] Created " << (region_counter - 1) << " distinct ascending regions" << std::endl;
   return ascending_regions;
 }
 
