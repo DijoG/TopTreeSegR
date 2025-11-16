@@ -259,9 +259,9 @@ List parse_gradient_network_fast(const std::vector<std::string>& vector_field,
 
 // PROPER ascending regions with NO BASIN MERGING
 // [[Rcpp::export]]
-arma::uvec compute_ascending_regions_fast(const List& gradient_network, 
-                                          const arma::uvec& minima, 
-                                          arma::uword n_vertices) {
+arma::uvec compute_ascending_regions_fast_optimized(const List& gradient_network, 
+                                                    const arma::uvec& minima, 
+                                                    arma::uword n_vertices) {
   arma::uvec ascending_regions = zeros<arma::uvec>(n_vertices);
   arma::uvec vertex_flow = gradient_network["vertex_flow"];
   
@@ -401,27 +401,4 @@ List build_minima_connectivity_spatial(const arma::uvec& minima,
   }
   
   return adjacency;
-}
-
-// Remove spatial_threshold from C++ function
-// [[Rcpp::export]]
-arma::uvec assign_regions_to_trees(const arma::uvec& ascending_regions,
-                                   const arma::uvec& seed_minima,
-                                   const arma::uvec& seed_labels, 
-                                   const arma::mat& points) {  
-  
-  arma::uword n_points = points.n_rows;
-  arma::uvec segmentation = zeros<arma::uvec>(n_points);
-  
-  if (seed_minima.n_elem == 0) return segmentation;
-  
-  // Simple assignment: each region gets the label of its connected seed
-  for (arma::uword i = 0; i < n_points; i++) {
-    arma::uword region_id = ascending_regions(i);
-    if (region_id > 0 && region_id <= seed_labels.n_elem) {
-      segmentation(i) = seed_labels(region_id - 1);  // -1 for 0-based indexing
-    }
-  }
-  
-  return segmentation;
 }

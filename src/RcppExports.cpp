@@ -48,16 +48,16 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// compute_ascending_regions_fast
-arma::uvec compute_ascending_regions_fast(const List& gradient_network, const arma::uvec& minima, arma::uword n_vertices);
-RcppExport SEXP _TopTreeSegR_compute_ascending_regions_fast(SEXP gradient_networkSEXP, SEXP minimaSEXP, SEXP n_verticesSEXP) {
+// compute_ascending_regions_fast_optimized
+arma::uvec compute_ascending_regions_fast_optimized(const List& gradient_network, const arma::uvec& minima, arma::uword n_vertices);
+RcppExport SEXP _TopTreeSegR_compute_ascending_regions_fast_optimized(SEXP gradient_networkSEXP, SEXP minimaSEXP, SEXP n_verticesSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const List& >::type gradient_network(gradient_networkSEXP);
     Rcpp::traits::input_parameter< const arma::uvec& >::type minima(minimaSEXP);
     Rcpp::traits::input_parameter< arma::uword >::type n_vertices(n_verticesSEXP);
-    rcpp_result_gen = Rcpp::wrap(compute_ascending_regions_fast(gradient_network, minima, n_vertices));
+    rcpp_result_gen = Rcpp::wrap(compute_ascending_regions_fast_optimized(gradient_network, minima, n_vertices));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -88,29 +88,14 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// assign_regions_to_trees
-arma::uvec assign_regions_to_trees(const arma::uvec& ascending_regions, const arma::uvec& seed_minima, const arma::uvec& seed_labels, const arma::mat& points);
-RcppExport SEXP _TopTreeSegR_assign_regions_to_trees(SEXP ascending_regionsSEXP, SEXP seed_minimaSEXP, SEXP seed_labelsSEXP, SEXP pointsSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const arma::uvec& >::type ascending_regions(ascending_regionsSEXP);
-    Rcpp::traits::input_parameter< const arma::uvec& >::type seed_minima(seed_minimaSEXP);
-    Rcpp::traits::input_parameter< const arma::uvec& >::type seed_labels(seed_labelsSEXP);
-    Rcpp::traits::input_parameter< const arma::mat& >::type points(pointsSEXP);
-    rcpp_result_gen = Rcpp::wrap(assign_regions_to_trees(ascending_regions, seed_minima, seed_labels, points));
-    return rcpp_result_gen;
-END_RCPP
-}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_TopTreeSegR_parse_simplex_vertices_cpp", (DL_FUNC) &_TopTreeSegR_parse_simplex_vertices_cpp, 1},
     {"_TopTreeSegR_extract_minima_corrected_cpp", (DL_FUNC) &_TopTreeSegR_extract_minima_corrected_cpp, 3},
     {"_TopTreeSegR_parse_gradient_network_fast", (DL_FUNC) &_TopTreeSegR_parse_gradient_network_fast, 3},
-    {"_TopTreeSegR_compute_ascending_regions_fast", (DL_FUNC) &_TopTreeSegR_compute_ascending_regions_fast, 3},
+    {"_TopTreeSegR_compute_ascending_regions_fast_optimized", (DL_FUNC) &_TopTreeSegR_compute_ascending_regions_fast_optimized, 3},
     {"_TopTreeSegR_build_minima_connectivity_fast", (DL_FUNC) &_TopTreeSegR_build_minima_connectivity_fast, 3},
     {"_TopTreeSegR_build_minima_connectivity_spatial", (DL_FUNC) &_TopTreeSegR_build_minima_connectivity_spatial, 4},
-    {"_TopTreeSegR_assign_regions_to_trees", (DL_FUNC) &_TopTreeSegR_assign_regions_to_trees, 4},
     {NULL, NULL, 0}
 };
 

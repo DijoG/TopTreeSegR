@@ -1,6 +1,7 @@
 {
     "source_window_id": "",
     "Source": "Source",
-    "cursorPosition": "138,73",
-    "scrollLine": "128"
+    "cursorPosition": "29,59",
+    "scrollLine": "18",
+    "disableDependencyDiscovery": "1"
 }

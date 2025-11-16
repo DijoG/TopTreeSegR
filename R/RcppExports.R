@@ -13,8 +13,8 @@ parse_gradient_network_fast <- function(vector_field, elevations, n_vertices) {
     .Call(`_TopTreeSegR_parse_gradient_network_fast`, vector_field, elevations, n_vertices)
 }
 
-compute_ascending_regions_fast <- function(gradient_network, minima, n_vertices) {
-    .Call(`_TopTreeSegR_compute_ascending_regions_fast`, gradient_network, minima, n_vertices)
+compute_ascending_regions_fast_optimized <- function(gradient_network, minima, n_vertices) {
+    .Call(`_TopTreeSegR_compute_ascending_regions_fast_optimized`, gradient_network, minima, n_vertices)
 }
 
 build_minima_connectivity_fast <- function(minima, vertices, max_distance = 2.0) {
@@ -23,9 +23,5 @@ build_minima_connectivity_fast <- function(minima, vertices, max_distance = 2.0)
 
 build_minima_connectivity_spatial <- function(minima, vertices, max_distance = 2.0, grid_size = 5.0) {
     .Call(`_TopTreeSegR_build_minima_connectivity_spatial`, minima, vertices, max_distance, grid_size)
-}
-
-assign_regions_to_trees <- function(ascending_regions, seed_minima, seed_labels, points) {
-    .Call(`_TopTreeSegR_assign_regions_to_trees`, ascending_regions, seed_minima, seed_labels, points)
 }
 
