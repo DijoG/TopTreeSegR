@@ -391,12 +391,13 @@ plot_TTS_2d <- function(x, point_size = 0.5, alpha = 0.8,
 #' 3D Visualization of Tree Segmentation
 #'
 #' @param TTS_result Result from TTS_segmentation()
+#' @param colors Color of labeled points (default: "viridis")
 #' @param point_size Size of points in 3D plot (default: 2)
 #' @param alpha Point transparency (default: 0.8)
 #'
 #' @return plotly 3D scatter plot
 #' @export
-plot_TTS_3d <- function(TTS_result, point_size = 2, alpha = 0.8) {
+plot_TTS_3d <- function(TTS_result, colors = "viridis", point_size = 2, alpha = 0.8) {
   if (!requireNamespace("plotly", quietly = TRUE)) {
     stop("plotly package required for 3D visualization. Install with: install.packages('plotly')")
   }
@@ -411,9 +412,9 @@ plot_TTS_3d <- function(TTS_result, point_size = 2, alpha = 0.8) {
   fig = plotly::plot_ly(plot_data, 
                         x = ~x, y = ~y, z = ~z, 
                         color = ~tree,
-                        colors = "viridis",
-                        type = 'scatter3d', 
-                        mode = 'markers',
+                        colors = colors,
+                        type = "scatter3d", 
+                        mode = "markers",
                         marker = list(size = point_size, opacity = alpha))
   
   fig = plotly::layout(

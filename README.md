@@ -99,8 +99,8 @@ TopTreeSegR::plot_TTS_3d(tts)
 ```
 | Input Point Cloud | Segmented Trees |
 |:---:|:---:|
-| <img src="https://raw.githubusercontent.com/DijoG/storage/main/TTSR/TTSR01.png" width="400"> | <img src="https://raw.githubusercontent.com/DijoG/storage/main/TTSR/TTSR03.png" width="400"> |
-| <img src="https://raw.githubusercontent.com/DijoG/storage/main/TTSR/TTSR02.png" width="400"> | <img src="https://raw.githubusercontent.com/DijoG/storage/main/TTSR/TTSR04.png" width="400"> |
+| <img src="https://raw.githubusercontent.com/DijoG/storage/main/TTSR/TTSR_01.png" width="400"> | <img src="https://raw.githubusercontent.com/DijoG/storage/main/TTSR/TTSR_03.png" width="400"> |
+| <img src="https://raw.githubusercontent.com/DijoG/storage/main/TTSR/TTSR_02.png" width="400"> | <img src="https://raw.githubusercontent.com/DijoG/storage/main/TTSR/TTSR_04.png" width="400"> |
 
 ## 🔬 How It Works
 

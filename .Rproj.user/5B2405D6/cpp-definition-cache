@@ -1,7 +1,7 @@
 [
     {
         "file": "D://TopTreeSegR/src/TopTreeSegR_GradientFlow.cpp",
-        "file_last_write": 1763140483.0,
+        "file_last_write": 1763321078.0,
         "definitions": [
             {
                 "usr": "c:@F@parse_simplex_vertices_cpp#&1$@N@std@N@__cxx11@S@basic_string>#C#$@N@std@S@char_traits>#C#$@N@std@S@allocator>#C#",
@@ -19,55 +19,45 @@
                 "parent_name": "",
                 "name": "extract_minima_corrected_cpp(const Rcpp::List &, const arma::mat &, const std::string &)",
                 "file": "D://TopTreeSegR/src/TopTreeSegR_GradientFlow.cpp",
-                "line": 75,
+                "line": 74,
                 "column": 12,
                 "hidden": false
             },
             {
-                "usr": "c:@F@parse_simplex_vertices_fast#&1$@N@std@N@__cxx11@S@basic_string>#C#$@N@std@S@char_traits>#C#$@N@std@S@allocator>#C#",
+                "usr": "c:@F@parse_gradient_network_fast_cpp#&1$@N@std@S@vector>#$@N@std@N@__cxx11@S@basic_string>#C#$@N@std@S@char_traits>#C#$@N@std@S@allocator>#C#$@N@std@S@allocator>#S2_#&1$@N@arma@S@Col>#d#i#",
                 "kind": 6,
                 "parent_name": "",
-                "name": "parse_simplex_vertices_fast(const std::string &)",
+                "name": "parse_gradient_network_fast_cpp(const std::vector<std::string> &, const arma::vec &, arma::uword)",
                 "file": "D://TopTreeSegR/src/TopTreeSegR_GradientFlow.cpp",
                 "line": 142,
-                "column": 26,
-                "hidden": false
-            },
-            {
-                "usr": "c:@F@parse_gradient_network_fast#&1$@N@std@S@vector>#$@N@std@N@__cxx11@S@basic_string>#C#$@N@std@S@char_traits>#C#$@N@std@S@allocator>#C#$@N@std@S@allocator>#S2_#i#",
-                "kind": 6,
-                "parent_name": "",
-                "name": "parse_gradient_network_fast(const std::vector<std::string> &, arma::uword)",
-                "file": "D://TopTreeSegR/src/TopTreeSegR_GradientFlow.cpp",
-                "line": 171,
                 "column": 6,
                 "hidden": false
             },
             {
-                "usr": "c:@F@compute_ascending_regions_fast#&1$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#&1$@N@arma@S@Col>#i#i#",
+                "usr": "c:@F@compute_ascending_regions_fast_cpp#&1$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#&1$@N@arma@S@Col>#i#i#",
                 "kind": 6,
                 "parent_name": "",
-                "name": "compute_ascending_regions_fast(const Rcpp::List &, const arma::uvec &, arma::uword)",
+                "name": "compute_ascending_regions_fast_cpp(const Rcpp::List &, const arma::uvec &, arma::uword)",
                 "file": "D://TopTreeSegR/src/TopTreeSegR_GradientFlow.cpp",
-                "line": 250,
+                "line": 238,
                 "column": 12,
                 "hidden": false
             },
             {
-                "usr": "c:@F@build_minima_connectivity_fast#&1$@N@arma@S@Col>#i#&1$@N@arma@S@Mat>#d#d#",
+                "usr": "c:@F@build_minima_connectivity_fast_cpp#&1$@N@arma@S@Col>#i#&1$@N@arma@S@Mat>#d#d#",
                 "kind": 6,
                 "parent_name": "",
-                "name": "build_minima_connectivity_fast(const arma::uvec &, const arma::mat &, double)",
+                "name": "build_minima_connectivity_fast_cpp(const arma::uvec &, const arma::mat &, double)",
                 "file": "D://TopTreeSegR/src/TopTreeSegR_GradientFlow.cpp",
                 "line": 287,
                 "column": 6,
                 "hidden": false
             },
             {
-                "usr": "c:@F@build_minima_connectivity_spatial#&1$@N@arma@S@Col>#i#&1$@N@arma@S@Mat>#d#d#d#",
+                "usr": "c:@F@build_minima_connectivity_spatial_cpp#&1$@N@arma@S@Col>#i#&1$@N@arma@S@Mat>#d#d#d#",
                 "kind": 6,
                 "parent_name": "",
-                "name": "build_minima_connectivity_spatial(const arma::uvec &, const arma::mat &, double, double)",
+                "name": "build_minima_connectivity_spatial_cpp(const arma::uvec &, const arma::mat &, double, double)",
                 "file": "D://TopTreeSegR/src/TopTreeSegR_GradientFlow.cpp",
                 "line": 327,
                 "column": 6,
