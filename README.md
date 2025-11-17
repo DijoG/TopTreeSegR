@@ -106,7 +106,7 @@ TopTreeSegR::plot_TTS_3d(tts)
 
 ### The Magic of Gradient Flow Watersheds
 
-`TopTreeSegR` uses mathematical topology to to understand tree structure through **natural drainage patterns**:
+`TopTreeSegR` uses mathematical topology to understand tree structure through **natural drainage patterns**:
 
 ```text
 🔄 Alpha-Complex Construction - Convert points to topological mesh
