@@ -6,9 +6,9 @@
 ![C++](https://img.shields.io/badge/C++-RcppArmadillo-blue?style=for-the-badge&logo=cplusplus)
 ![Development](https://img.shields.io/badge/Development-brightgreen?style=for-the-badge)
 
-**Blazing-fast individual tree segmentation from terrestrial LiDAR point clouds using Discrete Morse Theory and RcppArmadillo.**
+**Blazing-fast individual tree segmentation from terrestrial LiDAR point clouds using Discrete Morse Theory and Gradient Flow Watershed.**
 
-TopTreeSegR produces clean, structural point clouds representing tree architecture using alpha-complex simplification. This removes redundant points while perfectly preserving topological structure, enabling fast, accurate ecological analysis without foliage noise.
+`TopTreeSegR` produces clean, structural point clouds representing tree architecture using alpha-complex simplification and gradient flow analysis. This revolutionary approach treats tree segmentation as **reverse hydrological modeling** - where labels flow upstream from trunk minima to capture complete tree watersheds naturally.
 
 
 ## 🎯 Quick Start
@@ -104,33 +104,41 @@ TopTreeSegR::plot_TTS_3d(tts)
 
 ## 🔬 How It Works
 
-### The Magic of Discrete Morse Theory
+### The Magic of Gradient Flow Watersheds
 
-`TopTreeSegR` uses mathematical topology to understand tree structure:
+`TopTreeSegR` uses mathematical topology to to understand tree structure through **natural drainage patterns**:
 
 ```text
-1. 🔄 Alpha-Complex Construction - Convert points to topo logical structure
-2. 🎯 Morse Complex Computation - Find critical points (minima, saddles)
-3. 🌳 Gradient Flow Analysis - Understand how points connect
-4. 🔍 Seed Detection - Automatically find tree bottoms
-5. 🚀 Label Propagation - Grow trees from seeds using gradient flow
+1. 🔄 Alpha-Complex Construction - Convert points to topological mesh
+2. 🎯 Morse Complex Computation - Find critical points (tree trunks = minima)
+3. 🌊 Gradient Flow Analysis - Map natural "downhill flow" on tree surfaces 
+4. 🔍 Seed Detection - Automatically find tree bottoms (drainage points)
+4. 🚀 Reverse Upstream Propagation - Start at trunks, capture ALL points that flow to them
+5. 🌳️ Complete Watershed Capture - Each tree = everything connected to its trunk
 ```
-
 ## 🏗️ Architecture
 
 ```text
-Raw Points → Alpha-Complex → Morse Theory → Tree Segmentation
-    ↓              ↓              ↓                 ↓
- 1.2M pts      134K pts       Critical     Clean tree structure
-                               points           (134K pts)
+Raw Points → Alpha-Complex → Morse Theory → Gradient Flow → Tree Watersheds
+    ↓              ↓              ↓               ↓               ↓
+ 1.2M pts      134K pts       Critical       Natural flow    Complete tree
+                               points          analysis       structures
 ```
-
 ## Key Features
 
 ```text
 ⚡ Ultra-Fast: RcppArmadillo backend with parallel processing
+🌊 Watershed-Based: Revolutionary gradient flow approach
 🎯 Topology-Preserving: Mathematical foundation ensures accuracy
 🌳 Structure-Aware: Focuses on trunks and branches, ignores foliage noise
 🚀 Automated: Zero parameter tuning required
 📊 Validation-Ready: Built-in quality assessment metrics
+🔄 Natural Boundaries: Trees segmented as connected watersheds, not clusters
+🔗 Perfect Connectivity: Every tree guaranteed to be one connected component
 ```
+## Mathematical Foundation
+
+- Discrete Morse Theory: Combinatorial alternative to smooth Morse theory
+- Alpha Complexes: Subcomplex of Delaunay triangulation for topological simplification
+- Forman Gradient: Discrete representation of gradient flow
+- Ascending Regions: Influence regions of minima via gradient paths
