@@ -120,9 +120,9 @@ TopTreeSegR::plot_TTS_3d(tts)
 
 ```text
 Raw Points → Alpha-Complex → Morse Theory → Tree Segmentation
-    ↓              ↓              ↓              ↓
- 1.2M pts     134K pts      Critical       Clean tree
-                          points only     structure
+    ↓              ↓              ↓                 ↓
+ 1.2M pts      134K pts       Critical     Clean tree structure
+                               points           (134K pts)
 ```
 
 ## Key Features
