@@ -109,12 +109,12 @@ TopTreeSegR::plot_TTS_3d(tts)
 `TopTreeSegR` uses mathematical topology to to understand tree structure through **natural drainage patterns**:
 
 ```text
-1. 🔄 Alpha-Complex Construction - Convert points to topological mesh
-2. 🎯 Morse Complex Computation - Find critical points (tree trunks = minima)
-3. 🌊 Gradient Flow Analysis - Map natural "downhill flow" on tree surfaces 
-4. 🔍 Seed Detection - Automatically find tree bottoms (drainage points)
-4. 🚀 Reverse Upstream Propagation - Start at trunks, capture ALL points that flow to them
-5. 🌳️ Complete Watershed Capture - Each tree = everything connected to its trunk
+🔄 Alpha-Complex Construction - Convert points to topological mesh
+🎯 Morse Complex Computation - Find critical points (tree trunks = minima)
+🌊 Gradient Flow Analysis - Map natural "downhill flow" on tree surfaces 
+🔍 Seed Detection - Automatically find tree bottoms (drainage points)
+🚀 Reverse Upstream Propagation - Start at trunks, capture ALL points that flow to them
+🌳️ Complete Watershed Capture - Each tree = everything connected to its trunk
 ```
 ## 🏗️ Architecture
 
