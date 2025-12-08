@@ -84,8 +84,8 @@ tts <- TopTreeSegR::TTS_segmentation(
 validation <- TopTreeSegR::validate_segmentation(tts)
 
 # Extract individual trees
-tree_points <- split(tts$points, tts$segmentation)
-tree_1 <- tree_points[[1]]  # First tree point cloud
+tree_clouds <- split(tts$points, tts$segmentation)
+tree_1 <- tree_clouds[[1]]  # First tree point cloud
 ```
 
 ### Results
