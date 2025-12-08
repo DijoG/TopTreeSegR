@@ -28,7 +28,7 @@ library(TopTreeSegR)
 ```r
 library(lidR) 
 libary(dplyr) # Required by DiscreteMorseR
-trees <- lidR::readLAS(trees.las)
+trees <- lidR::readLAS(".../trees.las")
 
 # One-line segmentation on structural points
 result <- TopTreeSegR::TTS_segmentation(trees)
