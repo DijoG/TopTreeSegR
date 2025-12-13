@@ -89,7 +89,7 @@ TTS_segmentation <- function(lasdf, alpha = 0.1, clip_height = 0.5,
   # Step 1: Build alpha-complex mesh
   message("1. Building alpha-complex...\n")
   a = AlphaHull3D::ahull3d(points, alpha = alpha)
-  mesh = DiscreteMorseR::get_CCMESH(a$vb, a$it)
+  mesh = DiscreteMorseR::get_CCMESH(a)
   
   # Step 2: Compute Morse complex
   message("2. Computing Morse complex...\n")
