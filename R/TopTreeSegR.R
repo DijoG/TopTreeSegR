@@ -83,7 +83,7 @@ TTS_segmentation = function(lasdf,
   if (inherits(lasdf, "LAS")) {
     las_data = lasdf@data
     points = as.matrix(unique(las_data[,1:3]))
-    input_truth = las_data[[input_truth]]
+    input_a = las_data[[input_truth]]
     
   } else {
     stop("lasdf must be a LAS object")
@@ -93,7 +93,7 @@ TTS_segmentation = function(lasdf,
   
   # Step 1: Build alpha-complex mesh
   message("1. Building alpha-complex...\n")
-  a = ahull3D::ahull3D(points, alpha = alpha, input_truth = input_truth)
+  a = ahull3D::ahull3D(points, alpha = alpha, input_truth = input_a)
   mesh = DiscreteMorseR::get_CCMESH(a)
   
   # Step 2: Compute Morse complex
