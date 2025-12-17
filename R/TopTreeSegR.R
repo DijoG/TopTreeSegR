@@ -82,7 +82,7 @@ TTS_segmentation = function(lasdf,
   # Check input LAS
   if (inherits(lasdf, "LAS")) {
     
-    dt = data.table::as.data.table(lasdf@data)[, .(X, Y, Z, pid = get(inut_truth))]
+    dt = data.table::as.data.table(lasdf@data)[, .(X, Y, Z, pid = get(input_truth))]
     dt_unique <- unique(dt, by = c("X", "Y", "Z"))
     lasdff <- as.matrix(dt_unique)
     
