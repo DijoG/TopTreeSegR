@@ -15,7 +15,7 @@ TTS_segmentation(
 )
 }
 \arguments{
-\item{lasdf}{Input point cloud in las/laz or matrix/data.frame format}
+\item{lasdf}{Input point cloud in las/laz format (LAS object)}
 
 \item{alpha}{Alpha parameter for alpha-complex construction (default: 0.1)}
 

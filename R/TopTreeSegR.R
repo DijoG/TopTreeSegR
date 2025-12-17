@@ -36,7 +36,7 @@ NULL
 
 #' Ultra-Fast Tree Segmentation from LiDAR Point Clouds
 #'
-#' @param lasdf Input point cloud in las/laz or matrix/data.frame format
+#' @param lasdf Input point cloud in las/laz format (LAS object)
 #' @param alpha Alpha parameter for alpha-complex construction (default: 0.1)
 #' @param input_truth Attribute from lasd (default: 'pid')
 #' @param clip_height Height threshold for detecting stem seeds (default: 0.5)
@@ -66,7 +66,8 @@ NULL
 #' # Plot results
 #' plot(result)
 #' }
-TTS_segmentation = function(lasdf, alpha = 0.1, 
+TTS_segmentation = function(lasdf, 
+                            alpha = 0.1, 
                             input_truth = "pid", 
                             clip_height = 0.5, 
                             max_distance = 2.0, 
@@ -78,16 +79,15 @@ TTS_segmentation = function(lasdf, alpha = 0.1,
   
   message("=== TopTreeSegR: FAST TTS with DiscreteMorseR and RcppArmadillo ===\n")
   
-  # Handle different input types (LAS object, data frame, or matrix)
+  # Check input LAS
   if (inherits(lasdf, "LAS")) {
-    points = as.matrix(unique(as.data.frame(lasdf@data[,1:3])))
-  } else if (is.data.frame(lasdf) || is.matrix(lasdf)) {
-    points = as.matrix(unique(as.data.frame(lasdf[,1:3])))
+    las_data = lasdf@data
+    points = as.matrix(unique(las_data[,1:3]))
+    input_truth = las_data[[input_truth]]
+    
   } else {
-    stop("lasdf must be a LAS object, data frame, or matrix")
+    stop("lasdf must be a LAS object")
   }
-  
-  points = as.matrix(unique(as.data.frame(lasdf@data[,1:3])))
   
   message("Input points: ", nrow(lasdf), "\n")
   
