@@ -14,10 +14,11 @@ Encoding: UTF-8
 Imports: 
     Rcpp (>= 1.0.10),
     dbscan,
+    data.table,
     ggplot2,
     FNN
 Remotes:
-    stla/AlphaHull3D,
+    DijoG/ahull3D,
     DijoG/DiscreteMorseR
 LinkingTo: Rcpp, RcppArmadillo
 Roxygen: list(markdown = TRUE)

@@ -11,13 +11,13 @@ NULL
 .onAttach = function(libname, pkgname) {
   packageStartupMessage(
     "------ TopTreeSegR loaded! Ultra-fast tree segmentation with Discrete Morse Theory -----\n",
-    "------ GitHub dependencies: DiscreteMorseR & AlphaHull3D -----\n",
+    "------ GitHub dependencies: DiscreteMorseR & ahull3D -----\n",
     "------ Use TTS_segmentation() for blazing-fast segmentation! ------"
   )
 }
 
 .check_dependencies = function() {
-  required_pkgs = c("DiscreteMorseR", "AlphaHull3D", "dbscan", "ggplot2", "FNN")
+  required_pkgs = c("DiscreteMorseR", "ahull3D", "data.table", "dbscan", "ggplot2", "FNN")
   missing_pkgs = required_pkgs[!sapply(required_pkgs, requireNamespace, quietly = TRUE)]
   
   if (length(missing_pkgs) > 0) {
@@ -25,10 +25,10 @@ NULL
       "The following required packages are missing: ", 
       paste(missing_pkgs, collapse = ", "), "\n",
       "Install with: install.packages(c('", 
-      paste(setdiff(missing_pkgs, c("DiscreteMorseR", "AlphaHull3D")), collapse = "', '"), 
+      paste(setdiff(missing_pkgs, c("DiscreteMorseR", "ahull3D")), collapse = "', '"), 
       "'))\n",
       "And GitHub packages with: remotes::install_github(c('",
-      "DijoG/DiscreteMorseR', 'stla/AlphaHull3D'))"  
+      "DijoG/DiscreteMorseR', 'DijoG/ahull3D'))"  
     )
   }
   return(TRUE)
@@ -81,9 +81,10 @@ TTS_segmentation = function(lasdf,
   
   # Check input LAS
   if (inherits(lasdf, "LAS")) {
-    las_data = lasdf@data
-    points = as.matrix(unique(las_data[,1:3]))
-    input_a = las_data[[input_truth]]
+    
+    dt = data.table::as.data.table(lasdf@data)[, .(X, Y, Z, pid = get(inut_truth))]
+    dt_unique <- unique(dt, by = c("X", "Y", "Z"))
+    lasdff <- as.matrix(dt_unique)
     
   } else {
     stop("lasdf must be a LAS object")
@@ -93,7 +94,7 @@ TTS_segmentation = function(lasdf,
   
   # Step 1: Build alpha-complex mesh
   message("1. Building alpha-complex...\n")
-  a = ahull3D::ahull3D(points, alpha = alpha, input_truth = input_a)
+  a = ahull3D::ahull3D(points = lasdff[,1:3], alpha = alpha, input_truth = lasdff[,4])
   mesh = DiscreteMorseR::get_CCMESH(a)
   
   # Step 2: Compute Morse complex
