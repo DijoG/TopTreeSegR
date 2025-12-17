@@ -66,8 +66,12 @@ NULL
 #' # Plot results
 #' plot(result)
 #' }
-TTS_segmentation = function(lasdf, alpha = 0.1, input_truth = "pid", clip_height = 0.5, 
-                             max_distance = 2.0, grid_size = 5.0, cores = 12) {
+TTS_segmentation = function(lasdf, alpha = 0.1, 
+                            input_truth = "pid", 
+                            clip_height = 0.5, 
+                            max_distance = 2.0, 
+                            grid_size = 5.0, 
+                            cores = 12) {
   
   # Check dependencies
   .check_dependencies()
