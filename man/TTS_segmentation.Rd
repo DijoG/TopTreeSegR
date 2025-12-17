@@ -7,6 +7,7 @@
 TTS_segmentation(
   lasdf,
   alpha = 0.1,
+  input_truth = "pid",
   clip_height = 0.5,
   max_distance = 2,
   grid_size = 5,
@@ -14,9 +15,11 @@ TTS_segmentation(
 )
 }
 \arguments{
-\item{lasdf}{Input point cloud in las/laz format}
+\item{lasdf}{Input point cloud in las/laz or matrix/data.frame format}
 
 \item{alpha}{Alpha parameter for alpha-complex construction (default: 0.1)}
+
+\item{input_truth}{Attribute from lasd (default: 'pid')}
 
 \item{clip_height}{Height threshold for detecting stem seeds (default: 0.5)}
 
@@ -43,10 +46,10 @@ Ultra-Fast Tree Segmentation from LiDAR Point Clouds
 \examples{
 \dontrun{
 # Load your point cloud data
-# lasdf <- read.csv("point_cloud.csv")
+# lasdf = read.csv("point_cloud.csv")
 
 # Run ultra-fast segmentation
-result <- TTS_segmentation(lasdf)
+result = TTS_segmentation(lasdf)
 
 # Plot results
 plot(result)
