@@ -17,7 +17,7 @@ NULL
 }
 
 .check_dependencies = function() {
-  required_pkgs = c("DiscreteMorseR", "ahull3D", "data.table", "dbscan", "ggplot2", "FNN")
+  required_pkgs = c("DiscreteMorseR", "ahull3D", "dbscan", "ggplot2", "FNN")
   missing_pkgs = required_pkgs[!sapply(required_pkgs, requireNamespace, quietly = TRUE)]
   
   if (length(missing_pkgs) > 0) {
@@ -79,18 +79,31 @@ TTS_segmentation = function(lasdf,
   
   message("=== TopTreeSegR: FAST TTS with DiscreteMorseR and RcppArmadillo ===\n")
   
-  # Check input LAS
+  # Check input LAS - SIMPLIFIED VERSION
   if (inherits(lasdf, "LAS")) {
+    # Extract data from LAS object
+    las_data = lasdf@data
     
-    dt = data.table::as.data.table(lasdf@data)[, list(X, Y, Z, pid = get(input_truth))]
-    dt_unique <- unique(dt, by = c("X", "Y", "Z"))
-    lasdff <- as.matrix(dt_unique)
+    # Check if required columns exist
+    if (!all(c("X", "Y", "Z") %in% names(las_data))) {
+      stop("LAS data must contain X, Y, Z coordinate columns")
+    }
+    
+    if (!input_truth %in% names(las_data)) {
+      stop(sprintf("Column '%s' not found in LAS data.", input_truth))
+    }
+    
+    # Remove duplicate coordinates
+    unique_coords = las_data[!duplicated(las_data[, c("X", "Y", "Z")]), ]
+    
+    # Create the matrix for ahull3D
+    lasdff = as.matrix(unique_coords[, c("X", "Y", "Z", input_truth)])
     
   } else {
     stop("lasdf must be a LAS object")
   }
   
-  message("Input points: ", nrow(lasdf), "\n")
+  message("Input points: ", nrow(lasdff), "\n")
   
   # Step 1: Build alpha-complex mesh
   message("1. Building alpha-complex...\n")
