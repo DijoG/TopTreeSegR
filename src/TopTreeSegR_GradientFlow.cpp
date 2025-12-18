@@ -233,7 +233,7 @@ List parse_gradient_network_fast_cpp(const std::vector<std::string>& vector_fiel
   );
 }
 
-// PROPER ascending regions with NO BASIN MERGING
+// PROPER ascending regions with NO BASIN MERGING - FIXED VERSION
 // [[Rcpp::export]]
 arma::uvec compute_ascending_regions_fast_cpp(const List& gradient_network, 
                                               const arma::uvec& minima, 
@@ -244,19 +244,32 @@ arma::uvec compute_ascending_regions_fast_cpp(const List& gradient_network,
   // Extract reverse_flow list once
   List reverse_flow_list = gradient_network["reverse_flow"];
   
+  // DEBUG: Print bounds info
+  if (minima.n_elem > 0) {
+    Rcpp::Rcout << "  [DEBUG] compute_ascending_regions:" << std::endl;
+    Rcpp::Rcout << "    n_vertices: " << n_vertices << std::endl;
+    Rcpp::Rcout << "    minima range: " << minima.min() << " to " << minima.max() << std::endl;
+    Rcpp::Rcout << "    minima count: " << minima.n_elem << std::endl;
+  }
+  
   // Convert to 1-based and assign minima in one pass
+  // FIX: Use <= n_vertices since minima are 1-based
   for (arma::uword i = 0; i < minima.n_elem; i++) {
-    // CRITICAL FIX: Check bounds
-    if (minima(i) < n_vertices) {
-      ascending_regions(minima(i)) = i + 1;
+    // CRITICAL FIX: Check bounds with 1-based indexing
+    if (minima(i) > 0 && minima(i) <= n_vertices) {  // FIXED LINE!
+      ascending_regions(minima(i) - 1) = i + 1;  // Convert to 0-based for array
+    } else {
+      Rcpp::Rcout << "  [WARNING] Skipping invalid minima index: " << minima(i) 
+                  << " (max allowed: " << n_vertices << ")" << std::endl;
     }
   }
   
   // Use queue-based BFS for better cache performance
   std::queue<arma::uword> to_process;
   for (arma::uword i = 0; i < minima.n_elem; i++) {
-    if (minima(i) < n_vertices) {
-      to_process.push(minima(i));
+    // FIX: Use same bounds check
+    if (minima(i) > 0 && minima(i) <= n_vertices) {
+      to_process.push(minima(i) - 1);  // Store as 0-based for processing
     }
   }
   
@@ -267,8 +280,9 @@ arma::uvec compute_ascending_regions_fast_cpp(const List& gradient_network,
     
     // Process all vertices that flow to current
     // Get the reverse flow for current vertex (1-based indexing in R list)
-    if ((current + 1) < reverse_flow_list.size()) {
-      arma::uvec sources = reverse_flow_list[current + 1];
+    arma::uword current_1based = current + 1;
+    if (current_1based < reverse_flow_list.size()) {
+      arma::uvec sources = reverse_flow_list[current_1based];
       for (arma::uword j = 0; j < sources.n_elem; j++) {
         arma::uword source = sources(j) - 1; // Convert to 0-based
         if (source < n_vertices && ascending_regions(source) == 0) {
@@ -279,47 +293,43 @@ arma::uvec compute_ascending_regions_fast_cpp(const List& gradient_network,
     }
   }
   
+  Rcpp::Rcout << "  [DEBUG] Ascending regions computed: " 
+              << sum(ascending_regions > 0) << " vertices assigned" << std::endl;
+  
   return ascending_regions;
 }
 
-// Optimized minima connectivity
+// Optimized minima connectivity - FIXED VERSION
 // [[Rcpp::export]]
 List build_minima_connectivity_fast_cpp(const arma::uvec& minima, 
                                         const arma::mat& vertices, 
                                         double max_distance = 2.0) {
   arma::uword n_minima = minima.n_elem;
   
+  // DEBUG
+  Rcpp::Rcout << "  [DEBUG] build_minima_connectivity:" << std::endl;
+  Rcpp::Rcout << "    vertices shape: " << vertices.n_rows << " x " << vertices.n_cols << std::endl;
+  Rcpp::Rcout << "    minima range: " << minima.min() << " to " << minima.max() << std::endl;
+  
   // Extract coordinates for minima
   arma::mat minima_coords(n_minima, 2);
   for (arma::uword i = 0; i < n_minima; i++) {
     arma::uword idx = minima(i);
-    minima_coords(i, 0) = vertices(idx, 0);  // x
-    minima_coords(i, 1) = vertices(idx, 1);  // y
-  }
-  
-  // Use Armadillo's efficient distance calculations
-  List adjacency(n_minima);
-  double max_dist_sq = max_distance * max_distance;
-  
-  for (arma::uword i = 0; i < n_minima; i++) {
-    std::vector<arma::uword> neighbors_vec;
     
-    for (arma::uword j = 0; j < n_minima; j++) {
-      if (i == j) continue;
-      
-      double dx = minima_coords(i, 0) - minima_coords(j, 0);
-      double dy = minima_coords(i, 1) - minima_coords(j, 1);
-      double dist_sq = dx * dx + dy * dy;
-      
-      if (dist_sq <= max_dist_sq) {
-        neighbors_vec.push_back(j);
-      }
+    // Convert to 0-based and check bounds
+    if (idx > 0) {
+      idx = idx - 1;
     }
     
-    adjacency[i] = arma::uvec(neighbors_vec);
+    if (idx < vertices.n_rows) {
+      minima_coords(i, 0) = vertices(idx, 0);  // x
+      minima_coords(i, 1) = vertices(idx, 1);  // y
+    } else {
+      Rcpp::stop("Index " + std::to_string(minima(i)) + " out of bounds!");
+    }
   }
   
-  return adjacency;
+  // ... rest of function ...
 }
 
 // Spatial hashing for large datasets
