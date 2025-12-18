@@ -159,7 +159,7 @@ build_gradient_flow = function(morse_complex, vertices, max_distance = 2.0, grid
   message("  Found ", length(minima), "minima\n")
   
   # Convert to Armadillo types for maximum speed
-  minima_arma = as.numeric(minima) - 1  # Convert to 0-based for C++
+  minima_arma = as.numeric(minima)   
   vertices_arma = as.matrix(vertices)
   
   # ULTRA-FAST: Parse gradient pairs
