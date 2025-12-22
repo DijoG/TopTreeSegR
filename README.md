@@ -37,10 +37,8 @@ trees <- lidR::readLAS("your_forest.las")
 
 # Complete pipeline: segmentation + Bayesian refinement
 result <- TopTreeSegR::TTS_pipeline(
-  las = trees,
-  method = "morse-smale",     # Morse-Smale segmentation (recommended)
-  input_truth = "pid"         # Las attribute of point ids
-  cores = 20                  # Define number of threads
+  las = trees
+  cores = 20                  
 )
 
 # Boom! You've got individual trees 🎉
@@ -88,27 +86,28 @@ Adj Rand I: 0.8403
 res <- TTS_pipeline(
   las = trees_filtered,
   method = "morse-smale",
-  alpha = 0.1,
-  stem_height = 0.5,
+  input_truth = "pid"              # Las attribute of point ids
+  alpha = 0.1,                     # alpha value for alpha hull 
+  stem_height = 0.5,               # Find seeds below 
   prior_strength = 1.0,            # Spatial consistency
   likelihood_strength = 1.6,       # Elevation consistency (key!)
   confidence_threshold = 1.0,      # 1) Aggressive refinement (conf=1.0)
   cores = 20,
   fix_fragments = TRUE
-)
+) # ~110 seconds
 
-validate_TTS(res, trees_filtered)  # Expect ~0.8408 ARI
+validate_TTS(res, trees_filtered)  # ARI: 0.8408
 
 # Second BBR pass
 res2 <- TTS_BBR(
   res1,
   prior_strength = 1.0,
   likelihood_strength = 1.6,
-  confidence_threshold = 1.9,      # 2) Conservative cleanup (conf=1.9), only very (> 0.9) probable improvements 
+  confidence_threshold = 1.9,      # 2) Conservative cleanup, conf=1.9 ~ only very (> 0.9) probable improvements
   cores = 20
 ) # ~10 seconds
 
-validate_TTS(res2, trees_filtered) # Expect ~0.8502 ARI 
+validate_TTS(res2, trees_filtered) # ARI: 0.8502
 ```
 
 ### Results
@@ -125,6 +124,14 @@ TopTreeSegR::plot_TTS_3d(res2)
 | <img src="https://raw.githubusercontent.com/DijoG/storage/main/TTSR/TTSRms_01.png" width="400"> | <img src="https://raw.githubusercontent.com/DijoG/storage/main/TTSR/TTSRms_03.png" width="400"> |
 | <img src="https://raw.githubusercontent.com/DijoG/storage/main/TTSR/TTSRms_02.png" width="400"> | <img src="https://raw.githubusercontent.com/DijoG/storage/main/TTSR/TTSRms_04.png" width="400"> |
 
+## 🏗️ Architecture
+
+```text
+RAW POINTS → ALPHA-COMPLEX → MORSE COMPLEX → SEGMENTATION → BAYESIAN REFINEMENT → OUTPUT
+    ↓              ↓              ↓               ↓                 ↓               ↓
+ 1.2M pts      134K pts       Critical        Descending        Boundary         Individual
+                              simplices       manifolds         optimization     trees
+```
 ## 🔬 How It Works
 
 `TopTreeSegR` uses Discrete Morse Theory to segment trees by analyzing the topological structure of the point cloud:
@@ -163,14 +170,7 @@ TopTreeSegR::plot_TTS_3d(res2)
     - Ensure the connected component
     - Output clean individual tree segments
 ```
-## 🏗️ Architecture
 
-```text
-RAW POINTS → ALPHA-COMPLEX → MORSE COMPLEX → SEGMENTATION → BAYESIAN REFINEMENT → OUTPUT
-    ↓              ↓              ↓               ↓                 ↓               ↓
- 1.2M pts      134K pts       Critical        Descending        Boundary         Individual
-                              simplices       manifolds         optimization     trees
-```
 ## Key Features
 
 ```text
