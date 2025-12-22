@@ -2,22 +2,22 @@
 % Please edit documentation in R/TopTreeSegR.R
 \name{validate_TTS}
 \alias{validate_TTS}
-\title{' Validate Segmentation Quality}
+\title{Validate TTS Segmentation Results}
 \usage{
-validate_TTS(TTS_result, lasdf, input_truth = "pid", val_col = "treeid")
+validate_TTS(TTS_result, lasdf, val_col = "treeid", auto_align = TRUE)
 }
 \arguments{
-\item{TTS_result}{Result from TTS_segmentation()}
+\item{TTS_result}{Result from TTS_segmentation() with $labels and $original_pid}
 
-\item{lasdf}{Input point cloud las/laz format}
+\item{lasdf}{Original LAS object with ground truth}
 
-\item{input_truth}{Attribute from lasdf (default: 'pid')}
+\item{val_col}{Column in LAS with ground truth labels (default: 'treeid')}
 
-\item{val_col}{Column/field in the LAS data storing true labels}
+\item{auto_align}{Label (true and pridicted) alighment (default: TRUE)}
 }
 \value{
-Validation metrics including precision, recall, F1, accuracy, RI, ARI
+Validation metrics
 }
 \description{
-' Validate Segmentation Quality
+Uses result$labels and result$original_pid to match with LAS ground truth
 }

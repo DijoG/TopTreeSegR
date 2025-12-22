@@ -3,8 +3,4 @@
 \docType{package}
 \name{TopTreeSegR}
 \alias{TopTreeSegR}
-\title{Topological Tree Segmentation using Discrete Morse Theory}
-\description{
-Ultra-fast topology-based tree segmentation from LiDAR point clouds
-using Discrete Morse Theory and RcppArmadillo for maximum performance.
-}
+\title{TopTreeSegR: Topology-based Tree Segmentation for TLS Point Clouds}

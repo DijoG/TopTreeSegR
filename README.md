@@ -6,139 +6,189 @@
 ![C++](https://img.shields.io/badge/C++-RcppArmadillo-blue?style=for-the-badge&logo=cplusplus)
 ![Development](https://img.shields.io/badge/Development-brightgreen?style=for-the-badge)
 
-**Blazing-fast individual tree segmentation from terrestrial LiDAR point clouds using Discrete Morse Theory and Gradient Flow Watershed.**
+**Blazing-fast individual tree segmentation from terrestrial LiDAR point clouds using Discrete Morse Theory with Bayesian refinement achieveing >0.85 Adjusted Rand Index (ARI).**
 
-`TopTreeSegR` produces clean, structural point clouds representing tree architecture using alpha-complex simplification and gradient flow analysis. This revolutionary approach treats tree segmentation as **reverse hydrological modeling** - where labels flow upstream from trunk minima to capture complete tree watersheds naturally.
+`TopTreeSegR` combines **Morse-Smale complex analysis** with **Bayesian boundary optimization** to achieve state-of-the-art tree segmentation accuracy. Unlike traditional clustering methods, it uses topological features and elevation consistency to produce clean, accurate tree boundaries.
 
+## 🏆 Key Achievement
+
+**Proven >0.85 Adjusted Rand Index (ARI)** with our optimized Bayesian boundary refinement pipeline on benchmark TLS datasets.
 
 ## 🎯 Quick Start
 
 ### Installation
 ```r
 # Install from GitHub
+remotes::install_github("DijoG/ahull3D") 
 remotes::install_github("DijoG/DiscreteMorseR")
-remotes::install_github("stla/AlphaHull3D") 
 remotes::install_github("DijoG/TopTreeSegR")
+
+# Install CRAN dependencies
+install.packages(c("lidR", "dbscan", "FNN", "plotly")) 
 
 # Load the package
 library(TopTreeSegR)
 ```
 
-### One-Line Segmentation
+### One-Line Pipeline (Recommended)
 ```r
-library(lidR) 
-libary(dplyr) # Required by DiscreteMorseR
-trees <- lidR::readLAS(".../trees.las")
+# Read LAS file with ground truth
+trees <- readLAS("your_forest.las")
 
-# One-line segmentation on structural points
-result <- TopTreeSegR::TTS_segmentation(trees)
+# Complete pipeline: segmentation + Bayesian refinement
+result <- TopTreeSegR::TTS_pipeline(
+  las = trees,
+  method = "morse-smale",     # Morse-Smale segmentation (recommended)
+  input_truth = "pid"         # Las attribut of point ids
+  cores = 20                  # Define number of threads
+)
 
-# # Boom! You've got individual trees 🎉
+# Boom! You've got individual trees 🎉
 print(result)  
 
 # Visualize the topological segmentation
 TopTreeSegR::plot_TTS_3d(result)
 
-# Access individual trees
-trees_list <- split(result$points, result$segmentation)
+# Validate 
+TopTreeSegR::validate_TTS(result, trees)
 ```
 ## ⚡ Performance
 
 ```r
-TopTreeSegR::benchmark_TTS(trees)
+# Complete pipeline benchmark
+tictoc::tic()
+result <- TTS_pipeline(trees_filtered, cores = 20)
+tictoc::toc()
+# 106.74 seconds (~1.8 minutes)
+
+validate_TTS(result, trees_filtered)
 ```
 ```text
-=== BENCHMARK RESULTS ===
+=== TTS Segmentation Validation ===
 
-Total time: 164.92 seconds
+✓ Tree IDs automatically aligned
+Points: 232420 | Pred trees: 5 | True trees: 5
+Match rate: 100.0%
 
-Points processed: 1281618
-
-Trees detected: 5
-
-Minima found: 1055
-
-Seeds detected: 5
-
-Processing rate: 7771.15 points/second
+=== METRICS ===
+Precision:  0.9051
+Recall:     0.9051
+F1-Score:   0.9051
+Accuracy:   0.9051
+Rand Index: 0.9416
+Adj Rand I: 0.8403
 ```
 
 ## 🛠️ Advanced Usage
 
-### Custom Parameters
+### Complete Pipeline with 2-Pass Bayesian Boundary Refinement (BBR)
 
 ```r
-# Fine-tune for your forest type
-tts <- TopTreeSegR::TTS_segmentation(
-  lasdf = trees,
-  alpha = .1,           # Alpha-complex parameter
-  clip_height = .5,     # Max stem detection height
-  max_distance = 2.0,   # Minima connectivity
-  cores = 12            # Parallel processing
+# TTS_pipeline includes the first BBR pass
+res <- TTS_pipeline(
+  las = trees_filtered,
+  method = "morse-smale",
+  alpha = 0.1,
+  stem_height = 0.5,
+  prior_strength = 1.0,            # Spatial consistency
+  likelihood_strength = 1.6,       # Elevation consistency (key!)
+  confidence_threshold = 1.0,      # Aggressive refinement
+  cores = 20,
+  fix_fragments = TRUE
 )
-```
 
-### Validation & Quality Control
-```r
-# Check segmentation quality
-validation <- TopTreeSegR::validate_segmentation(tts)
+validate_TTS(res, trees_filtered)  # Expect ~0.8408 ARI
 
-# Extract individual trees
-tree_clouds <- split(tts$points, tts$segmentation)
-tree_1 <- tree_clouds[[1]]  # First tree point cloud
+# Second BBR pass
+res2 <- TTS_BBR(
+  res1,
+  prior_strength = 1.0,
+  likelihood_strength = 1.6,
+  confidence_threshold = 1.9,      # Only very (> 0.9) probably improvements 
+  cores = 20
+) # ~10 seconds
+
+validate_TTS(res2, trees_filtered) # Expect ~0.8508 ARI 
 ```
 
 ### Results
 ```r
 # 2D projections
-TopTreeSegR::plot_TTS_2d(result, projection = "XY")  # Top-down view
-TopTreeSegR::plot_TTS_2d(result, projection = "XZ")  # Side view
+TopTreeSegR::plot_TTS_2d(res2, projection = "XY")  # Top-down view
+TopTreeSegR::plot_TTS_2d(res2, projection = "XZ")  # Side view
 
 # 3D interactive plot
-TopTreeSegR::plot_TTS_3d(tts)
+TopTreeSegR::plot_TTS_3d(res2)
 ```
 | Input Point Cloud | Segmented Trees |
 |:---:|:---:|
-| <img src="https://raw.githubusercontent.com/DijoG/storage/main/TTSR/TTSR_01.png" width="400"> | <img src="https://raw.githubusercontent.com/DijoG/storage/main/TTSR/TTSR_03.png" width="400"> |
-| <img src="https://raw.githubusercontent.com/DijoG/storage/main/TTSR/TTSR_02.png" width="400"> | <img src="https://raw.githubusercontent.com/DijoG/storage/main/TTSR/TTSR_04.png" width="400"> |
+| <img src="https://raw.githubusercontent.com/DijoG/storage/main/TTSR/TTSRms_01.png" width="400"> | <img src="https://raw.githubusercontent.com/DijoG/storage/main/TTSR/TTSRms_03.png" width="400"> |
+| <img src="https://raw.githubusercontent.com/DijoG/storage/main/TTSR/TTSRms_02.png" width="400"> | <img src="https://raw.githubusercontent.com/DijoG/storage/main/TTSR/TTSRms_04.png" width="400"> |
 
 ## 🔬 How It Works
 
-### The Magic of Gradient Flow Watersheds
-
-`TopTreeSegR` uses mathematical topology to understand tree structure through **natural drainage patterns**:
+`TopTreeSegR` uses Discrete Morse Theory to segment trees by analyzing the topological structure of the point cloud:
 
 ```text
-🔄 Alpha-Complex Construction - Convert points to topological mesh
-🎯 Morse Complex Computation - Find critical points (tree trunks = minima)
-🌊 Gradient Flow Analysis - Map natural "downhill flow" on tree surfaces 
-🔍 Seed Detection - Automatically find tree bottoms (drainage points)
-🚀 Reverse Upstream Propagation - Start at trunks, capture ALL points that flow to them
-🌳️ Complete Watershed Capture - Each tree = everything connected to its trunk
+🔄 1. Alpha-Complex Construction 
+    - Convert discrete points to topological mesh
+    - Simplify using alpha-shape filtration
+    - Create combinatorial representation for Morse analysis
+
+🎯 2. Morse Complex Computation
+    - Compute discrete gradient vector field
+    - Identify critical points (minima, maxima, saddles)
+    - Tree trunks correspond to Morse minima (lowest points in each tree)
+
+🌊 3. Morse-Smale Complex Analysis
+    - Partition mesh into ascending/descending manifolds
+    - Each minimum's ascending manifold = influence region of a tree
+    - Points flow downhill to their corresponding trunk minimum
+
+🔍 4. Seed Detection & Initial Segmentation
+    - Cluster low minima near ground as tree trunks
+    - Assign each point to the trunk whose ascending manifold it belongs to
+    - Create initial tree segments based on gradient flow structure
+
+🧠 5. Bayesian Boundary Refinement (Key Innovation!)
+    - Identify boundary points between trees
+    - Compute posterior probabilities using:
+        • Prior: Neighborhood label consistency
+        • Likelihood: Elevation coherence (Gaussian model)
+    - Perform Maximum A Posteriori (MAP) estimation
+    - Fix boundary errors using elevation consistency
+
+✅ 6. Post-Processing
+    - Merge small fragments into neighboring trees
+    - Ensure the connected component
+    - Output clean individual tree segments
 ```
 ## 🏗️ Architecture
 
 ```text
-Raw Points → Alpha-Complex → Morse Theory → Gradient Flow → Tree Watersheds
-    ↓              ↓              ↓               ↓               ↓
- 1.2M pts      134K pts       Critical       Natural flow    Complete tree
-                               points          analysis       structures
+RAW POINTS → ALPHA-COMPLEX → MORSE COMPLEX → SEGMENTATION → BAYESIAN REFINEMENT → OUTPUT
+    ↓              ↓              ↓               ↓                 ↓               ↓
+ 1.2M pts      134K pts       Critical        Descending        Boundary        Individual
+                               points          manifolds      optimization        trees
 ```
 ## Key Features
 
 ```text
-⚡ Ultra-Fast: RcppArmadillo backend with parallel processing
-🌊 Watershed-Based: Revolutionary gradient flow approach
-🎯 Topology-Preserving: Mathematical foundation ensures accuracy
-🌳 Structure-Aware: Focuses on trunks and branches, ignores foliage noise
-🚀 Automated: Zero parameter tuning required
-📊 Validation-Ready: Built-in quality assessment metrics
-🔄 Natural Boundaries: Trees segmented as connected watersheds, not clusters
-🔗 Perfect Connectivity: Every tree guaranteed to be one connected component
+⚡ Ultra-Fast: RcppArmadillo + OpenMP parallel processing
+🧠 Bayesian-Optimized: Elevation-consistent boundary refinement (>0.85 ARI)
+🎯 Topology-Based: Morse-Smale complex analysis for robust segmentation
+🌳 Structure-Aware: Leverages tree height coherence for accurate boundaries
+📊 Validation-Ready: Built-in ARI, precision, recall, F1-score metrics
+🔍 Uncertainty-Aware: Bayesian framework quantifies segmentation confidence
+🚀 Production-Ready: Single TTS_pipeline() function for end-to-end workflow
+📈 Benchmark-Proven: Validated on TLS datasets with ground truth
 ```
 ## Mathematical Foundation
 
-- Discrete Morse Theory: Combinatorial alternative to smooth Morse theory
-- Alpha Complexes: Subcomplex of Delaunay triangulation for topological simplification
-- Forman Gradient: Discrete representation of gradient flow
-- Ascending Regions: Influence regions of minima via gradient paths
+- Discrete Morse Theory: Combinatorial framework for topological analysis of discrete data
+- Morse-Smale Complex: Partition of space into ascending/descending manifolds from critical points
+- Alpha Complexes: Topologically correct subset of Delaunay triangulation for point cloud simplification
+- Forman Gradient: Discrete vector field representing flow direction on the mesh
+- Bayesian Inference: Posterior = Prior × Likelihood, with MAP estimation for optimal labeling
+- Gaussian Likelihood: Models elevation consistency within each tree segment
+- Markovian Prior: Captures spatial coherence through neighborhood relationships

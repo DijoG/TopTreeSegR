@@ -4,16 +4,30 @@
 \alias{plot_TTS_3d}
 \title{3D Visualization of Tree Segmentation}
 \usage{
-plot_TTS_3d(TTS_result, colors = "viridis", point_size = 2, alpha = 0.8)
+plot_TTS_3d(
+  TTS_result,
+  colors = "viridis",
+  point_size = 2,
+  alpha = 0.8,
+  show_minima = FALSE,
+  minima_size = 4,
+  minima_color = "grey35"
+)
 }
 \arguments{
 \item{TTS_result}{Result from TTS_segmentation()}
 
-\item{colors}{Color of labeled points (default: "viridis")}
+\item{colors}{Color palette for trees (default: "viridis")}
 
 \item{point_size}{Size of points in 3D plot (default: 2)}
 
 \item{alpha}{Point transparency (default: 0.8)}
+
+\item{show_minima}{Whether to show minima locations (default: FALSE)}
+
+\item{minima_size}{Size of minima points (default: 4)}
+
+\item{minima_color}{Color for minima points (default: "orange")}
 }
 \value{
 plotly 3D scatter plot

@@ -5,53 +5,50 @@
 \title{Ultra-Fast Tree Segmentation from LiDAR Point Clouds}
 \usage{
 TTS_segmentation(
-  lasdf,
+  las,
   alpha = 0.1,
   input_truth = "pid",
-  clip_height = 0.5,
+  stem_height = 0.5,
   max_distance = 2,
   grid_size = 5,
-  cores = 12
+  spatial_eps = 1,
+  method = "morse-smale",
+  cores = 2
 )
 }
 \arguments{
-\item{lasdf}{Input point cloud in las/laz format (LAS object)}
+\item{las}{Input point cloud in las/laz format (LAS object)}
 
 \item{alpha}{Alpha parameter for alpha-complex construction (default: 0.1)}
 
-\item{input_truth}{Attribute from lasd (default: 'pid')}
+\item{input_truth}{Attribute from las (default: "pid")}
 
-\item{clip_height}{Height threshold for detecting stem seeds (default: 0.5)}
+\item{stem_height}{Height threshold for detecting stem seeds (default: 0.5)}
 
 \item{max_distance}{Maximum distance for minima connectivity (default: 2.0)}
 
 \item{grid_size}{Grid size for spatial hashing in large datasets (default: 5.0)}
 
-\item{cores}{Number of cores to use for Morse complex computation (default: 12)}
+\item{spatial_eps}{Spatial epsilon for clustering (default: 1.0)}
+
+\item{method}{Segmentation method: "morse-smale" (default) or "gradient"}
+
+\item{cores}{Number of CPU threads for parallel processing (default: 2)}
 }
 \value{
 A list containing:
 \itemize{
-\item \code{segmentation}: Vector of tree labels for each point
-\item \code{points}: Original point coordinates
+\item \code{labels}: Vector of tree labels for mesh vertices
+\item \code{original_pid}: Original point IDs from mesh
+\item \code{mesh_coords}: Mesh vertices coordinates
 \item \code{n_trees}: Number of trees detected
-\item \code{minima}: Indices of Morse minima
-\item \code{seeds}: Indices of seed minima used for tree initialization
-\item \code{gradient_flow}: Complete gradient flow information
+\item \code{minima}: Indices of Morse minima (1-based)
+\item \code{ascending_regions}: Ascending region assignments (gradient method only)
+\item \code{seeds}: Seed minima used (i123 values)
+\item \code{method}: Method used for segmentation
+\item \code{parameters}: List of parameters used
 }
 }
 \description{
 Ultra-Fast Tree Segmentation from LiDAR Point Clouds
-}
-\examples{
-\dontrun{
-# Load your point cloud data
-# lasdf = read.csv("point_cloud.csv")
-
-# Run ultra-fast segmentation
-result = TTS_segmentation(lasdf)
-
-# Plot results
-plot(result)
-}
 }

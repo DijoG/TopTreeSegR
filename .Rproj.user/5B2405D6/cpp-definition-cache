@@ -1,65 +1,205 @@
 [
     {
-        "file": "D://TopTreeSegR/src/TopTreeSegR_GradientFlow.cpp",
-        "file_last_write": 1763321078.0,
+        "file": "D://TopTreeSegR/src/TopTreeSegR.cpp",
+        "file_last_write": 1766393703.0,
         "definitions": [
+            {
+                "usr": "c:@S@Point3D",
+                "kind": 3,
+                "parent_name": "",
+                "name": "Point3D",
+                "file": "D://TopTreeSegR/src/TopTreeSegR.cpp",
+                "line": 18,
+                "column": 8,
+                "hidden": false
+            },
+            {
+                "usr": "c:@S@Edge",
+                "kind": 3,
+                "parent_name": "",
+                "name": "Edge",
+                "file": "D://TopTreeSegR/src/TopTreeSegR.cpp",
+                "line": 25,
+                "column": 8,
+                "hidden": false
+            },
+            {
+                "usr": "c:@S@GradientNetwork",
+                "kind": 3,
+                "parent_name": "",
+                "name": "GradientNetwork",
+                "file": "D://TopTreeSegR/src/TopTreeSegR.cpp",
+                "line": 29,
+                "column": 8,
+                "hidden": false
+            },
             {
                 "usr": "c:@F@parse_simplex_vertices_cpp#&1$@N@std@N@__cxx11@S@basic_string>#C#$@N@std@S@char_traits>#C#$@N@std@S@allocator>#C#",
                 "kind": 6,
                 "parent_name": "",
                 "name": "parse_simplex_vertices_cpp(const std::string &)",
-                "file": "D://TopTreeSegR/src/TopTreeSegR_GradientFlow.cpp",
-                "line": 17,
+                "file": "D://TopTreeSegR/src/TopTreeSegR.cpp",
+                "line": 38,
                 "column": 26,
                 "hidden": false
             },
             {
-                "usr": "c:@F@extract_minima_corrected_cpp#&1$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#&1$@N@arma@S@Mat>#d#&1$@N@std@N@__cxx11@S@basic_string>#C#$@N@std@S@char_traits>#C#$@N@std@S@allocator>#C#",
+                "usr": "c:@F@map_mesh_to_points_cpp#&1$@N@arma@S@Mat>#d#&1$@N@Rcpp@S@Vector>#VI13#@N@Rcpp@ST>1#T@PreserveStorage#S0_#d#",
                 "kind": 6,
                 "parent_name": "",
-                "name": "extract_minima_corrected_cpp(const Rcpp::List &, const arma::mat &, const std::string &)",
-                "file": "D://TopTreeSegR/src/TopTreeSegR_GradientFlow.cpp",
-                "line": 74,
-                "column": 12,
+                "name": "map_mesh_to_points_cpp(const arma::mat &, const Rcpp::IntegerVector &, const arma::mat &, double)",
+                "file": "D://TopTreeSegR/src/TopTreeSegR.cpp",
+                "line": 95,
+                "column": 15,
                 "hidden": false
             },
             {
-                "usr": "c:@F@parse_gradient_network_fast_cpp#&1$@N@std@S@vector>#$@N@std@N@__cxx11@S@basic_string>#C#$@N@std@S@char_traits>#C#$@N@std@S@allocator>#C#$@N@std@S@allocator>#S2_#&1$@N@arma@S@Col>#d#i#",
+                "usr": "c:@S@TreeSegmenter",
+                "kind": 2,
+                "parent_name": "",
+                "name": "TreeSegmenter",
+                "file": "D://TopTreeSegR/src/TopTreeSegR.cpp",
+                "line": 130,
+                "column": 7,
+                "hidden": false
+            },
+            {
+                "usr": "c:@S@TreeSegmenter@F@segmentTrees#$@N@Rcpp@S@DataFrame_Impl>#@N@Rcpp@ST>1#T@PreserveStorage#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#",
+                "kind": 7,
+                "parent_name": "TreeSegmenter",
+                "name": "segmentTrees(Rcpp::DataFrame, Rcpp::List)",
+                "file": "D://TopTreeSegR/src/TopTreeSegR.cpp",
+                "line": 151,
+                "column": 8,
+                "hidden": false
+            },
+            {
+                "usr": "c:@S@TreeSegmenter@F@loadVertices#$@N@Rcpp@S@DataFrame_Impl>#@N@Rcpp@ST>1#T@PreserveStorage#",
+                "kind": 7,
+                "parent_name": "TreeSegmenter",
+                "name": "loadVertices(Rcpp::DataFrame)",
+                "file": "D://TopTreeSegR/src/TopTreeSegR.cpp",
+                "line": 174,
+                "column": 8,
+                "hidden": false
+            },
+            {
+                "usr": "c:@S@TreeSegmenter@F@extractMorseData#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#",
+                "kind": 7,
+                "parent_name": "TreeSegmenter",
+                "name": "extractMorseData(Rcpp::List)",
+                "file": "D://TopTreeSegR/src/TopTreeSegR.cpp",
+                "line": 188,
+                "column": 8,
+                "hidden": false
+            },
+            {
+                "usr": "c:@S@TreeSegmenter@F@buildGradientNetwork#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#",
+                "kind": 7,
+                "parent_name": "TreeSegmenter",
+                "name": "buildGradientNetwork(Rcpp::List)",
+                "file": "D://TopTreeSegR/src/TopTreeSegR.cpp",
+                "line": 210,
+                "column": 8,
+                "hidden": false
+            },
+            {
+                "usr": "c:@S@TreeSegmenter@F@findSeedMinima#",
+                "kind": 7,
+                "parent_name": "TreeSegmenter",
+                "name": "findSeedMinima",
+                "file": "D://TopTreeSegR/src/TopTreeSegR.cpp",
+                "line": 286,
+                "column": 22,
+                "hidden": false
+            },
+            {
+                "usr": "c:@S@TreeSegmenter@F@propagateLabels#&1$@N@std@S@vector>#i#$@N@std@S@allocator>#i#",
+                "kind": 7,
+                "parent_name": "TreeSegmenter",
+                "name": "propagateLabels(const std::vector<uword> &)",
+                "file": "D://TopTreeSegR/src/TopTreeSegR.cpp",
+                "line": 356,
+                "column": 20,
+                "hidden": false
+            },
+            {
+                "usr": "c:@S@TreeSegmenter@F@computeAscendingRegions#",
+                "kind": 7,
+                "parent_name": "TreeSegmenter",
+                "name": "computeAscendingRegions",
+                "file": "D://TopTreeSegR/src/TopTreeSegR.cpp",
+                "line": 386,
+                "column": 8,
+                "hidden": false
+            },
+            {
+                "usr": "c:@S@TreeSegmenter@F@handleUnassignedVertices#&$@N@std@S@vector>#I#$@N@std@S@allocator>#I#&1$@N@std@S@vector>#i#$@N@std@S@allocator>#i#",
+                "kind": 7,
+                "parent_name": "TreeSegmenter",
+                "name": "handleUnassignedVertices(std::vector<int> &, const std::vector<uword> &)",
+                "file": "D://TopTreeSegR/src/TopTreeSegR.cpp",
+                "line": 426,
+                "column": 8,
+                "hidden": false
+            },
+            {
+                "usr": "c:@S@TreeSegmenter@F@createOutput#&1$@N@std@S@vector>#I#$@N@std@S@allocator>#I#&1$@N@std@S@vector>#i#$@N@std@S@allocator>#i#",
+                "kind": 7,
+                "parent_name": "TreeSegmenter",
+                "name": "createOutput(const std::vector<int> &, const std::vector<uword> &)",
+                "file": "D://TopTreeSegR/src/TopTreeSegR.cpp",
+                "line": 469,
+                "column": 8,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@tree_segment_cpp#$@N@Rcpp@S@DataFrame_Impl>#@N@Rcpp@ST>1#T@PreserveStorage#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#d#d#d#d#",
                 "kind": 6,
                 "parent_name": "",
-                "name": "parse_gradient_network_fast_cpp(const std::vector<std::string> &, const arma::vec &, arma::uword)",
-                "file": "D://TopTreeSegR/src/TopTreeSegR_GradientFlow.cpp",
-                "line": 142,
+                "name": "tree_segment_cpp(Rcpp::DataFrame, Rcpp::List, double, double, double, double)",
+                "file": "D://TopTreeSegR/src/TopTreeSegR.cpp",
+                "line": 516,
                 "column": 6,
                 "hidden": false
             },
             {
-                "usr": "c:@F@compute_ascending_regions_fast_cpp#&1$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#&1$@N@arma@S@Col>#i#i#",
+                "usr": "c:@F@morse_smale_segment_cpp#$@N@Rcpp@S@DataFrame_Impl>#@N@Rcpp@ST>1#T@PreserveStorage#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#d#d#",
                 "kind": 6,
                 "parent_name": "",
-                "name": "compute_ascending_regions_fast_cpp(const Rcpp::List &, const arma::uvec &, arma::uword)",
-                "file": "D://TopTreeSegR/src/TopTreeSegR_GradientFlow.cpp",
-                "line": 238,
-                "column": 12,
-                "hidden": false
-            },
-            {
-                "usr": "c:@F@build_minima_connectivity_fast_cpp#&1$@N@arma@S@Col>#i#&1$@N@arma@S@Mat>#d#d#",
-                "kind": 6,
-                "parent_name": "",
-                "name": "build_minima_connectivity_fast_cpp(const arma::uvec &, const arma::mat &, double)",
-                "file": "D://TopTreeSegR/src/TopTreeSegR_GradientFlow.cpp",
-                "line": 287,
+                "name": "morse_smale_segment_cpp(Rcpp::DataFrame, Rcpp::List, double, double)",
+                "file": "D://TopTreeSegR/src/TopTreeSegR.cpp",
+                "line": 535,
                 "column": 6,
                 "hidden": false
             },
             {
-                "usr": "c:@F@build_minima_connectivity_spatial_cpp#&1$@N@arma@S@Col>#i#&1$@N@arma@S@Mat>#d#d#d#",
+                "usr": "c:@F@get_mesh_coords_cpp#$@N@Rcpp@S@DataFrame_Impl>#@N@Rcpp@ST>1#T@PreserveStorage#",
                 "kind": 6,
                 "parent_name": "",
-                "name": "build_minima_connectivity_spatial_cpp(const arma::uvec &, const arma::mat &, double, double)",
-                "file": "D://TopTreeSegR/src/TopTreeSegR_GradientFlow.cpp",
-                "line": 327,
+                "name": "get_mesh_coords_cpp(Rcpp::DataFrame)",
+                "file": "D://TopTreeSegR/src/TopTreeSegR.cpp",
+                "line": 879,
+                "column": 11,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@MRFBR_cpp#&1$@N@arma@S@Mat>#d#&1$@N@Rcpp@S@Vector>#VI13#@N@Rcpp@ST>1#T@PreserveStorage#d#d#I#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "MRFBR_cpp(const arma::mat &, const Rcpp::IntegerVector &, double, double, int)",
+                "file": "D://TopTreeSegR/src/TopTreeSegR.cpp",
+                "line": 896,
+                "column": 15,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@BBR_ultrafast_cpp#&1$@N@arma@S@Mat>#d#&1$@N@Rcpp@S@Vector>#VI13#@N@Rcpp@ST>1#T@PreserveStorage#d#d#d#I#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "BBR_ultrafast_cpp(const arma::mat &, const Rcpp::IntegerVector &, double, double, double, int)",
+                "file": "D://TopTreeSegR/src/TopTreeSegR.cpp",
+                "line": 1070,
                 "column": 6,
                 "hidden": false
             }

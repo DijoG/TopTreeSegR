@@ -11,91 +11,100 @@ Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
 Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
-// parse_simplex_vertices_cpp
-std::vector<arma::uword> parse_simplex_vertices_cpp(const std::string& simplex_str);
-RcppExport SEXP _TopTreeSegR_parse_simplex_vertices_cpp(SEXP simplex_strSEXP) {
+// map_mesh_to_points_cpp
+IntegerVector map_mesh_to_points_cpp(const arma::mat& mesh_coords, const IntegerVector& mesh_labels, const arma::mat& point_coords, double max_distance);
+RcppExport SEXP _TopTreeSegR_map_mesh_to_points_cpp(SEXP mesh_coordsSEXP, SEXP mesh_labelsSEXP, SEXP point_coordsSEXP, SEXP max_distanceSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const std::string& >::type simplex_str(simplex_strSEXP);
-    rcpp_result_gen = Rcpp::wrap(parse_simplex_vertices_cpp(simplex_str));
-    return rcpp_result_gen;
-END_RCPP
-}
-// extract_minima_corrected_cpp
-arma::uvec extract_minima_corrected_cpp(const List& morse_complex, const arma::mat& vertices, const std::string& temp_dir);
-RcppExport SEXP _TopTreeSegR_extract_minima_corrected_cpp(SEXP morse_complexSEXP, SEXP verticesSEXP, SEXP temp_dirSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const List& >::type morse_complex(morse_complexSEXP);
-    Rcpp::traits::input_parameter< const arma::mat& >::type vertices(verticesSEXP);
-    Rcpp::traits::input_parameter< const std::string& >::type temp_dir(temp_dirSEXP);
-    rcpp_result_gen = Rcpp::wrap(extract_minima_corrected_cpp(morse_complex, vertices, temp_dir));
-    return rcpp_result_gen;
-END_RCPP
-}
-// parse_gradient_network_fast_cpp
-List parse_gradient_network_fast_cpp(const std::vector<std::string>& vector_field, const arma::vec& elevations, arma::uword n_vertices);
-RcppExport SEXP _TopTreeSegR_parse_gradient_network_fast_cpp(SEXP vector_fieldSEXP, SEXP elevationsSEXP, SEXP n_verticesSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const std::vector<std::string>& >::type vector_field(vector_fieldSEXP);
-    Rcpp::traits::input_parameter< const arma::vec& >::type elevations(elevationsSEXP);
-    Rcpp::traits::input_parameter< arma::uword >::type n_vertices(n_verticesSEXP);
-    rcpp_result_gen = Rcpp::wrap(parse_gradient_network_fast_cpp(vector_field, elevations, n_vertices));
-    return rcpp_result_gen;
-END_RCPP
-}
-// compute_ascending_regions_fast_cpp
-arma::uvec compute_ascending_regions_fast_cpp(const List& gradient_network, const arma::uvec& minima, arma::uword n_vertices);
-RcppExport SEXP _TopTreeSegR_compute_ascending_regions_fast_cpp(SEXP gradient_networkSEXP, SEXP minimaSEXP, SEXP n_verticesSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const List& >::type gradient_network(gradient_networkSEXP);
-    Rcpp::traits::input_parameter< const arma::uvec& >::type minima(minimaSEXP);
-    Rcpp::traits::input_parameter< arma::uword >::type n_vertices(n_verticesSEXP);
-    rcpp_result_gen = Rcpp::wrap(compute_ascending_regions_fast_cpp(gradient_network, minima, n_vertices));
-    return rcpp_result_gen;
-END_RCPP
-}
-// build_minima_connectivity_fast_cpp
-List build_minima_connectivity_fast_cpp(const arma::uvec& minima, const arma::mat& vertices, double max_distance);
-RcppExport SEXP _TopTreeSegR_build_minima_connectivity_fast_cpp(SEXP minimaSEXP, SEXP verticesSEXP, SEXP max_distanceSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const arma::uvec& >::type minima(minimaSEXP);
-    Rcpp::traits::input_parameter< const arma::mat& >::type vertices(verticesSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type mesh_coords(mesh_coordsSEXP);
+    Rcpp::traits::input_parameter< const IntegerVector& >::type mesh_labels(mesh_labelsSEXP);
+    Rcpp::traits::input_parameter< const arma::mat& >::type point_coords(point_coordsSEXP);
     Rcpp::traits::input_parameter< double >::type max_distance(max_distanceSEXP);
-    rcpp_result_gen = Rcpp::wrap(build_minima_connectivity_fast_cpp(minima, vertices, max_distance));
+    rcpp_result_gen = Rcpp::wrap(map_mesh_to_points_cpp(mesh_coords, mesh_labels, point_coords, max_distance));
     return rcpp_result_gen;
 END_RCPP
 }
-// build_minima_connectivity_spatial_cpp
-List build_minima_connectivity_spatial_cpp(const arma::uvec& minima, const arma::mat& vertices, double max_distance, double grid_size);
-RcppExport SEXP _TopTreeSegR_build_minima_connectivity_spatial_cpp(SEXP minimaSEXP, SEXP verticesSEXP, SEXP max_distanceSEXP, SEXP grid_sizeSEXP) {
+// tree_segment_cpp
+List tree_segment_cpp(DataFrame vertices_df, List morse_complex_data, double stem_height, double spatial_eps, double max_distance, double grid_size);
+RcppExport SEXP _TopTreeSegR_tree_segment_cpp(SEXP vertices_dfSEXP, SEXP morse_complex_dataSEXP, SEXP stem_heightSEXP, SEXP spatial_epsSEXP, SEXP max_distanceSEXP, SEXP grid_sizeSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const arma::uvec& >::type minima(minimaSEXP);
-    Rcpp::traits::input_parameter< const arma::mat& >::type vertices(verticesSEXP);
+    Rcpp::traits::input_parameter< DataFrame >::type vertices_df(vertices_dfSEXP);
+    Rcpp::traits::input_parameter< List >::type morse_complex_data(morse_complex_dataSEXP);
+    Rcpp::traits::input_parameter< double >::type stem_height(stem_heightSEXP);
+    Rcpp::traits::input_parameter< double >::type spatial_eps(spatial_epsSEXP);
     Rcpp::traits::input_parameter< double >::type max_distance(max_distanceSEXP);
     Rcpp::traits::input_parameter< double >::type grid_size(grid_sizeSEXP);
-    rcpp_result_gen = Rcpp::wrap(build_minima_connectivity_spatial_cpp(minima, vertices, max_distance, grid_size));
+    rcpp_result_gen = Rcpp::wrap(tree_segment_cpp(vertices_df, morse_complex_data, stem_height, spatial_eps, max_distance, grid_size));
+    return rcpp_result_gen;
+END_RCPP
+}
+// morse_smale_segment_cpp
+List morse_smale_segment_cpp(DataFrame vertices_df, List morse_complex_data, double stem_height, double spatial_eps);
+RcppExport SEXP _TopTreeSegR_morse_smale_segment_cpp(SEXP vertices_dfSEXP, SEXP morse_complex_dataSEXP, SEXP stem_heightSEXP, SEXP spatial_epsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< DataFrame >::type vertices_df(vertices_dfSEXP);
+    Rcpp::traits::input_parameter< List >::type morse_complex_data(morse_complex_dataSEXP);
+    Rcpp::traits::input_parameter< double >::type stem_height(stem_heightSEXP);
+    Rcpp::traits::input_parameter< double >::type spatial_eps(spatial_epsSEXP);
+    rcpp_result_gen = Rcpp::wrap(morse_smale_segment_cpp(vertices_df, morse_complex_data, stem_height, spatial_eps));
+    return rcpp_result_gen;
+END_RCPP
+}
+// get_mesh_coords_cpp
+arma::mat get_mesh_coords_cpp(DataFrame vertices_df);
+RcppExport SEXP _TopTreeSegR_get_mesh_coords_cpp(SEXP vertices_dfSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< DataFrame >::type vertices_df(vertices_dfSEXP);
+    rcpp_result_gen = Rcpp::wrap(get_mesh_coords_cpp(vertices_df));
+    return rcpp_result_gen;
+END_RCPP
+}
+// MRFBR_cpp
+IntegerVector MRFBR_cpp(const arma::mat& coords, const IntegerVector& labels, double spatial_sigma, double intensity, int iterations);
+RcppExport SEXP _TopTreeSegR_MRFBR_cpp(SEXP coordsSEXP, SEXP labelsSEXP, SEXP spatial_sigmaSEXP, SEXP intensitySEXP, SEXP iterationsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const arma::mat& >::type coords(coordsSEXP);
+    Rcpp::traits::input_parameter< const IntegerVector& >::type labels(labelsSEXP);
+    Rcpp::traits::input_parameter< double >::type spatial_sigma(spatial_sigmaSEXP);
+    Rcpp::traits::input_parameter< double >::type intensity(intensitySEXP);
+    Rcpp::traits::input_parameter< int >::type iterations(iterationsSEXP);
+    rcpp_result_gen = Rcpp::wrap(MRFBR_cpp(coords, labels, spatial_sigma, intensity, iterations));
+    return rcpp_result_gen;
+END_RCPP
+}
+// BBR_ultrafast_cpp
+List BBR_ultrafast_cpp(const arma::mat& coords, const IntegerVector& labels, double prior_strength, double likelihood_strength, double confidence_threshold, int cores);
+RcppExport SEXP _TopTreeSegR_BBR_ultrafast_cpp(SEXP coordsSEXP, SEXP labelsSEXP, SEXP prior_strengthSEXP, SEXP likelihood_strengthSEXP, SEXP confidence_thresholdSEXP, SEXP coresSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const arma::mat& >::type coords(coordsSEXP);
+    Rcpp::traits::input_parameter< const IntegerVector& >::type labels(labelsSEXP);
+    Rcpp::traits::input_parameter< double >::type prior_strength(prior_strengthSEXP);
+    Rcpp::traits::input_parameter< double >::type likelihood_strength(likelihood_strengthSEXP);
+    Rcpp::traits::input_parameter< double >::type confidence_threshold(confidence_thresholdSEXP);
+    Rcpp::traits::input_parameter< int >::type cores(coresSEXP);
+    rcpp_result_gen = Rcpp::wrap(BBR_ultrafast_cpp(coords, labels, prior_strength, likelihood_strength, confidence_threshold, cores));
     return rcpp_result_gen;
 END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_TopTreeSegR_parse_simplex_vertices_cpp", (DL_FUNC) &_TopTreeSegR_parse_simplex_vertices_cpp, 1},
-    {"_TopTreeSegR_extract_minima_corrected_cpp", (DL_FUNC) &_TopTreeSegR_extract_minima_corrected_cpp, 3},
-    {"_TopTreeSegR_parse_gradient_network_fast_cpp", (DL_FUNC) &_TopTreeSegR_parse_gradient_network_fast_cpp, 3},
-    {"_TopTreeSegR_compute_ascending_regions_fast_cpp", (DL_FUNC) &_TopTreeSegR_compute_ascending_regions_fast_cpp, 3},
-    {"_TopTreeSegR_build_minima_connectivity_fast_cpp", (DL_FUNC) &_TopTreeSegR_build_minima_connectivity_fast_cpp, 3},
-    {"_TopTreeSegR_build_minima_connectivity_spatial_cpp", (DL_FUNC) &_TopTreeSegR_build_minima_connectivity_spatial_cpp, 4},
+    {"_TopTreeSegR_map_mesh_to_points_cpp", (DL_FUNC) &_TopTreeSegR_map_mesh_to_points_cpp, 4},
+    {"_TopTreeSegR_tree_segment_cpp", (DL_FUNC) &_TopTreeSegR_tree_segment_cpp, 6},
+    {"_TopTreeSegR_morse_smale_segment_cpp", (DL_FUNC) &_TopTreeSegR_morse_smale_segment_cpp, 4},
+    {"_TopTreeSegR_get_mesh_coords_cpp", (DL_FUNC) &_TopTreeSegR_get_mesh_coords_cpp, 1},
+    {"_TopTreeSegR_MRFBR_cpp", (DL_FUNC) &_TopTreeSegR_MRFBR_cpp, 5},
+    {"_TopTreeSegR_BBR_ultrafast_cpp", (DL_FUNC) &_TopTreeSegR_BBR_ultrafast_cpp, 6},
     {NULL, NULL, 0}
 };
 

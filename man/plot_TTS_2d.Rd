@@ -2,33 +2,36 @@
 % Please edit documentation in R/TopTreeSegR.R
 \name{plot_TTS_2d}
 \alias{plot_TTS_2d}
-\title{2D Visualization of Tree Segmentation}
+\title{2D Projection Plot}
 \usage{
-\method{plot}{TTS_result}(
-  x,
+plot_TTS_2d(
+  TTS_result,
+  projection = "xy",
   point_size = 0.5,
   alpha = 0.8,
-  show_seeds = TRUE,
-  projection = "XY",
+  show_minima = FALSE,
+  minima_size = 2,
+  minima_color = "grey35",
   ...
 )
 }
 \arguments{
-\item{x}{TTS_result object from TTS_segmentation()}
+\item{TTS_result}{Result from TTS_segmentation()}
+
+\item{projection}{Plot projection: "xy", "xz", or "yz" (default: "xy")}
 
 \item{point_size}{Size of points in plot (default: 0.5)}
 
 \item{alpha}{Point transparency (default: 0.8)}
 
-\item{show_seeds}{Whether to show seed locations (default: TRUE)}
+\item{show_minima}{Whether to show minima locations (default: FALSE)}
 
-\item{projection}{Coordinate projection to plot: "XY", "XZ", or "YZ" (default: "XY")}
+\item{minima_size}{Size of minima points (default: 2)}
 
-\item{...}{Additional plotting parameters}
-}
-\value{
-ggplot object
+\item{minima_color}{Color for minima points (default: "orange")}
+
+\item{...}{Additional parameters passed to plot()}
 }
 \description{
-2D Visualization of Tree Segmentation
+2D Projection Plot
 }
