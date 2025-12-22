@@ -12,7 +12,7 @@
 
 ## 🏆 Key Achievement
 
-**Proven >0.85 Adjusted Rand Index (ARI)** with our optimized Bayesian boundary refinement pipeline on benchmark TLS datasets.
+**Proven >0.85 Adjusted Rand Index (ARI)** with the optimized Bayesian Boundary Refinement pipeline on benchmark TLS datasets.
 
 ## 🎯 Quick Start
 
