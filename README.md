@@ -8,20 +8,20 @@
 
 **Blazing-fast individual tree segmentation from terrestrial LiDAR point clouds using Discrete Morse Theory with Bayesian refinement achieveing >0.85 Adjusted Rand Index (ARI).**
 
-`TopTreeSegR` combines **Morse-Smale complex analysis** with **Bayesian boundary optimization** to achieve state-of-the-art tree segmentation accuracy. Unlike traditional clustering methods, it uses topological features and elevation consistency to produce clean, accurate tree boundaries.
+`TopTreeSegR` combines **Morse-Smale complex analysis** with **Bayesian boundary optimization** to achieve state-of-the-art tree segmentation accuracy. This R package delivers a production-ready pipeline that transforms raw points into clean, validated tree segments in under two minutes for a typical plot.
+
+🎯 Core Features: >0.85 ARI | Single TTS_pipeline() | Bayesian refinement | Full validation suite | Interactive 3D viz
 
 ## 🏆 Key Achievement
 
-**Proven >0.85 Adjusted Rand Index (ARI)** with the optimized Bayesian Boundary Refinement pipeline on benchmark TLS datasets.
+**Proven >0.85 Adjusted Rand Index (ARI)** with the 2-pass Bayesian Boundary Refinement pipeline on benchmark TLS datasets.
 
-## 🎯 Quick Start
+## Quick Start
 
 ### Installation
 ```r
 # Install from GitHub
-remotes::install_github("DijoG/ahull3D") 
-remotes::install_github("DijoG/DiscreteMorseR")
-remotes::install_github("DijoG/TopTreeSegR")
+remotes::install_github(c("DijoG/ahull3D", "DijoG/DiscreteMorseR", "DijoG/TopTreeSegR"))
 
 # Install CRAN dependencies
 install.packages(c("lidR", "dbscan", "FNN", "plotly")) 
@@ -39,7 +39,7 @@ trees <- readLAS("your_forest.las")
 result <- TopTreeSegR::TTS_pipeline(
   las = trees,
   method = "morse-smale",     # Morse-Smale segmentation (recommended)
-  input_truth = "pid"         # Las attribut of point ids
+  input_truth = "pid"         # Las attribute of point ids
   cores = 20                  # Define number of threads
 )
 
@@ -92,7 +92,7 @@ res <- TTS_pipeline(
   stem_height = 0.5,
   prior_strength = 1.0,            # Spatial consistency
   likelihood_strength = 1.6,       # Elevation consistency (key!)
-  confidence_threshold = 1.0,      # Aggressive refinement
+  confidence_threshold = 1.0,      # 1) Aggressive refinement (conf=1.0)
   cores = 20,
   fix_fragments = TRUE
 )
@@ -104,7 +104,7 @@ res2 <- TTS_BBR(
   res1,
   prior_strength = 1.0,
   likelihood_strength = 1.6,
-  confidence_threshold = 1.9,      # Only very (> 0.9) probable improvements 
+  confidence_threshold = 1.9,      # 2) Conservative cleanup (conf=1.9), only very (> 0.9) probable improvements 
   cores = 20
 ) # ~10 seconds
 
@@ -178,7 +178,7 @@ RAW POINTS → ALPHA-COMPLEX → MORSE COMPLEX → SEGMENTATION → BAYESIAN REF
 🧠 Bayesian-Optimized: Elevation-consistent boundary refinement (>0.85 ARI)
 🎯 Topology-Based: Morse-Smale complex analysis for robust segmentation
 🌳 Structure-Aware: Leverages tree height coherence for accurate boundaries
-📊 Validation-Ready: Built-in ARI, precision, recall, F1-score metrics
+📊 Validation-Ready: Built-in ARI, accuracs, precision, recall, F1-score metrics
 🔍 Uncertainty-Aware: Bayesian framework quantifies segmentation confidence
 🚀 Production-Ready: Single TTS_pipeline() function for end-to-end workflow
 📈 Benchmark-Proven: Validated on TLS datasets with ground truth
@@ -187,7 +187,7 @@ RAW POINTS → ALPHA-COMPLEX → MORSE COMPLEX → SEGMENTATION → BAYESIAN REF
 
 - Discrete Morse Theory: Combinatorial framework for topological analysis of discrete data
 - Morse-Smale Complex: Partition of space into ascending/descending manifolds from critical points
-- Alpha Complexes: Topologically correct subset of Delaunay triangulation for point cloud simplification
+- Alpha Complex: Topologically correct subset of Delaunay triangulation for point cloud simplification
 - Forman Gradient: Discrete vector field representing flow direction on the mesh
 - Bayesian Inference: Posterior = Prior × Likelihood, with MAP estimation for optimal labeling
 - Gaussian Likelihood: Models elevation consistency within each tree segment
