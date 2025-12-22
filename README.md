@@ -33,7 +33,7 @@ library(TopTreeSegR)
 ### One-Line Pipeline (Recommended)
 ```r
 # Read LAS file with ground truth
-trees <- readLAS("your_forest.las")
+trees <- lidR::readLAS("your_forest.las")
 
 # Complete pipeline: segmentation + Bayesian refinement
 result <- TopTreeSegR::TTS_pipeline(
