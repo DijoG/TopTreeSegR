@@ -44,7 +44,6 @@ Suggests:
 Remotes:
     DijoG/ahull3D,
     DijoG/DiscreteMorseR
-    DijoG/ahull3D
 LinkingTo:
     Rcpp,
     RcppArmadillo
