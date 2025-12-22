@@ -108,7 +108,7 @@ res2 <- TTS_BBR(
   cores = 20
 ) # ~10 seconds
 
-validate_TTS(res2, trees_filtered) # Expect ~0.8508 ARI 
+validate_TTS(res2, trees_filtered) # Expect ~0.8502 ARI 
 ```
 
 ### Results
@@ -168,8 +168,8 @@ TopTreeSegR::plot_TTS_3d(res2)
 ```text
 RAW POINTS → ALPHA-COMPLEX → MORSE COMPLEX → SEGMENTATION → BAYESIAN REFINEMENT → OUTPUT
     ↓              ↓              ↓               ↓                 ↓               ↓
- 1.2M pts      134K pts       Critical        Descending        Boundary        Individual
-                               points          manifolds      optimization        trees
+ 1.2M pts      134K pts       Critical        Descending        Boundary         Individual
+                              simplices       manifolds         optimization     trees
 ```
 ## Key Features
 
