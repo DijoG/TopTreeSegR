@@ -16,7 +16,7 @@
 
 **Proven >0.85 Adjusted Rand Index (ARI)** with the 2-pass Bayesian Boundary Refinement pipeline on benchmark TLS datasets.
 
-## Quick Start
+## 🚀 Quick Start
 
 ### Installation
 ```r
