@@ -104,7 +104,7 @@ res2 <- TTS_BBR(
   res1,
   prior_strength = 1.0,
   likelihood_strength = 1.6,
-  confidence_threshold = 1.9,      # Only very (> 0.9) probably improvements 
+  confidence_threshold = 1.9,      # Only very (> 0.9) probable improvements 
   cores = 20
 ) # ~10 seconds
 
