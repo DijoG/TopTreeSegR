@@ -170,7 +170,6 @@ RAW POINTS → ALPHA-COMPLEX → MORSE COMPLEX → SEGMENTATION → BAYESIAN REF
     - Ensure the connected component
     - Output clean individual tree segments
 ```
-
 ## Key Features
 
 ```text
@@ -185,6 +184,7 @@ RAW POINTS → ALPHA-COMPLEX → MORSE COMPLEX → SEGMENTATION → BAYESIAN REF
 ```
 ## Mathematical Foundation
 
+```text
 - Discrete Morse Theory: Combinatorial framework for topological analysis of discrete data
 - Morse-Smale Complex: Partition of space into ascending/descending manifolds from critical points
 - Alpha Complex: Topologically correct subset of Delaunay triangulation for point cloud simplification
@@ -192,3 +192,4 @@ RAW POINTS → ALPHA-COMPLEX → MORSE COMPLEX → SEGMENTATION → BAYESIAN REF
 - Bayesian Inference: Posterior = Prior × Likelihood, with MAP estimation for optimal labeling
 - Gaussian Likelihood: Models elevation consistency within each tree segment
 - Markovian Prior: Captures spatial coherence through neighborhood relationships
+```
