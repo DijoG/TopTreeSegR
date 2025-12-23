@@ -87,7 +87,7 @@ res <- TTS_pipeline(
   las = trees_filtered,
   method = "morse-smale",
   input_truth = "pid"              # Las attribute of point ids
-  alpha = 0.1,                     # alpha value for alpha hull 
+  alpha = 0.1,                     # Alpha value for alpha hull 
   stem_height = 0.5,               # Find seeds below 
   prior_strength = 1.0,            # Spatial consistency
   likelihood_strength = 1.6,       # Elevation consistency (key!)
