@@ -126,15 +126,17 @@ TopTreeSegR::plot_TTS_3d(res2)
 
 ## 🏗️ Architecture
 
+```text
 RAW POINTS → ALPHA-COMPLEX → MORSE COMPLEX → SEGMENTATION → BAYESIAN REFINEMENT → OUTPUT
     ↓              ↓              ↓               ↓                 ↓               ↓
  1.2M pts      134K pts       Critical        Descending        Boundary         Individual
                               simplices       manifolds         optimization     trees
-
+```
 ## 🔬 How It Works
 
 `TopTreeSegR` uses Discrete Morse Theory to segment trees by analyzing the topological structure of the point cloud:
 
+```text
 🔄 1. Alpha-Complex Construction 
     - Convert discrete points to topological mesh
     - Simplify using alpha-shape filtration
@@ -167,9 +169,10 @@ RAW POINTS → ALPHA-COMPLEX → MORSE COMPLEX → SEGMENTATION → BAYESIAN REF
     - Merge small fragments into neighboring trees
     - Ensure the connected component
     - Output clean individual tree segments
-
+```
 ## Key Features
 
+```text
 ⚡ Ultra-Fast: RcppArmadillo + OpenMP parallel processing
 🧠 Bayesian-Optimized: Elevation-consistent boundary refinement (>0.85 ARI)
 🎯 Topology-Based: Morse-Smale complex analysis for robust segmentation
@@ -178,9 +181,10 @@ RAW POINTS → ALPHA-COMPLEX → MORSE COMPLEX → SEGMENTATION → BAYESIAN REF
 🔍 Uncertainty-Aware: Bayesian framework quantifies segmentation confidence
 🚀 Production-Ready: Single TTS_pipeline() function for end-to-end workflow
 📈 Benchmark-Proven: Validated on TLS datasets with ground truth
-
+```
 ## Mathematical Foundation
 
+```text
 - Discrete Morse Theory: Combinatorial framework for topological analysis of discrete data
 - Morse-Smale Complex: Partition of space into ascending/descending manifolds from critical points
 - Alpha Complex: Topologically correct subset of Delaunay triangulation for point cloud simplification
@@ -188,3 +192,4 @@ RAW POINTS → ALPHA-COMPLEX → MORSE COMPLEX → SEGMENTATION → BAYESIAN REF
 - Bayesian Inference: Posterior = Prior × Likelihood, with MAP estimation for optimal labeling
 - Gaussian Likelihood: Models elevation consistency within each tree segment
 - Markovian Prior: Captures spatial coherence through neighborhood relationships
+```
