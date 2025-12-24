@@ -215,14 +215,14 @@ TTS_segmentation <- function(las,
   
   # Create result object
   result_obj = list(
-    labels = result$mesh_labels,  # Labels for mesh vertices (1-based tree IDs)
-    original_pid = vertices_df$i123,  # Original point IDs
-    mesh_coords = result$mesh_coords,  # Mesh coordinates
-    n_trees = as.integer(result$n_trees),  # Number of trees detected
-    minima = as.integer(result$minima),  # Indices of Morse minima (1-based)
+    labels = result$mesh_labels,          # Labels for mesh vertices (1-based tree IDs)
+    original_pid = vertices_df$i123,      # Original point IDs
+    mesh_coords = result$mesh_coords,     # Mesh coordinates
+    n_trees = as.integer(result$n_trees), # Number of trees detected
+    minima = as.integer(result$minima),   # Indices of Morse minima (1-based)
     ascending_regions = as.integer(result$ascending_regions),  # For gradient method
-    seeds = as.integer(result$seeds),  # Seed minima (i123 values)
-    method = result$method,  # Method used
+    seeds = as.integer(result$seeds),     # Seed minima (i123 values)
+    method = result$method,               # Method used
     parameters = list(
       alpha = alpha,
       stem_height = stem_height,
