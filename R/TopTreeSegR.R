@@ -36,7 +36,7 @@ NULL
 #'
 #' @param las Input point cloud in las/laz format (LAS object)
 #' @param alpha Alpha parameter for alpha-complex construction (default: 0.1)
-#' @param input_truth Attribute from las (default: "pid")
+#' @param input_truth Point ID attribute from las, if not found generated (default: "pid")
 #' @param stem_height Height threshold for detecting stem seeds (default: 0.5)
 #' @param max_distance Maximum distance for minima connectivity (default: 2.0)
 #' @param grid_size Grid size for spatial hashing in large datasets (default: 5.0)
@@ -84,14 +84,19 @@ TTS_segmentation <- function(las,
       stop("LAS data must contain X, Y, Z coordinate columns")
     }
     
-    if (!input_truth %in% names(las_data)) {
-      stop(sprintf("Column '%s' not found in LAS data.", input_truth))
-    }
-    
     # Remove duplicate coordinates
     las_data = las_data[!duplicated(las_data[, c("X", "Y", "Z")]), ]
     coords = as.matrix(las_data[, c("X", "Y", "Z")])
-    input_truth_vec = las_data[[input_truth]]
+    
+    # Handle input_truth: if column exists, use it; otherwise generate sequence
+    if (input_truth %in% names(las_data)) {
+      input_truth_vec = las_data[[input_truth]]
+      message("Using '", input_truth, "' column for point IDs")
+    } else {
+      # Generate sequential IDs starting from 1
+      input_truth_vec = 1:nrow(las_data)
+      message("Column '", input_truth, "' not found. Generating sequential point IDs (1 to ", nrow(las_data), ")")
+    }
     
   } else {
     stop("las must be a LAS object")
