@@ -35,7 +35,7 @@ library(TopTreeSegR)
 # Read LAS file with ground truth
 trees <- lidR::readLAS("your_forest.las")
 
-# Add "pid" column to LAS attribute
+# Add "pid" field to LAS attribute
 pid <- 1:lidR::npoints(trees)  
 trees_filtered <- lidR::add_lasattribute(trees, pid, "pid", "Unique point ID")
 
