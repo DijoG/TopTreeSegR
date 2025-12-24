@@ -35,6 +35,10 @@ library(TopTreeSegR)
 # Read LAS file with ground truth
 trees <- lidR::readLAS("your_forest.las")
 
+# Add "pid" column to LAS attribute
+pid <- 1:lidR::npoints(trees)  
+trees_filtered <- lidR::add_lasattribute(trees, pid, "pid", "Unique point ID")
+
 # Complete pipeline: segmentation + Bayesian refinement
 result <- TopTreeSegR::TTS_pipeline(
   las = trees
@@ -55,11 +59,11 @@ TopTreeSegR::validate_TTS(result, trees)
 ```r
 # Complete pipeline benchmark
 tictoc::tic()
-result <- TTS_pipeline(trees_filtered, cores = 20)
+result <- TTS_pipeline(trees, cores = 20)
 tictoc::toc()
 # 106.74 seconds (~1.8 minutes)
 
-validate_TTS(result, trees_filtered)
+validate_TTS(result, trees)
 ```
 ```text
 === TTS Segmentation Validation ===
@@ -84,7 +88,7 @@ Adj Rand I: 0.8403
 ```r
 # TTS_pipeline includes the first BBR pass
 res <- TTS_pipeline(
-  las = trees_filtered,
+  las = trees,
   method = "morse-smale",
   input_truth = "pid"              # Las attribute of point ids
   alpha = 0.1,                     # Alpha value for alpha hull 
@@ -96,7 +100,7 @@ res <- TTS_pipeline(
   fix_fragments = TRUE
 ) # ~110 seconds
 
-validate_TTS(res, trees_filtered)  # ARI: 0.8408
+validate_TTS(res, trees)  # ARI: 0.8408
 
 # Second BBR pass
 res2 <- TTS_BBR(
@@ -107,7 +111,7 @@ res2 <- TTS_BBR(
   cores = 20
 ) # ~10 seconds
 
-validate_TTS(res2, trees_filtered) # ARI: 0.8502
+validate_TTS(res2, trees) # ARI: 0.8502
 ```
 
 ### Results
