@@ -8,7 +8,7 @@ NULL
 
 .onAttach <- function(libname, pkgname) {
   packageStartupMessage(
-    "=== TopTreeWSegR loaded! ===\n",
+    "=== TopTreeSegR loaded! ===\n",
     "C++ accelerated tree segmentation with gradient flow\n",
     "Use TTS_pipeline() for complete segmentation workflow"
   )
@@ -71,7 +71,7 @@ TTS_segmentation <- function(las,
   # Check dependencies
   .check_dependencies()
   
-  message("=== TopTreeWSegR: C++ Accelerated Tree Segmentation ===\n")
+  message("=== TopTreeSegR: C++ Accelerated Tree Segmentation ===\n")
   message("Method selected: ", method)
   
   # Check input LAS
@@ -749,7 +749,7 @@ plot_TTS_3d <- function(TTS_result, colors = "viridis", point_size = 2,
   fig = plotly::layout(
     fig,
     title = list(
-      text = paste("TopTreeWSegR 3D -", TTS_result$n_trees, "Trees -", TTS_result$method, "method"),
+      text = paste("TopTreeSegR 3D -", TTS_result$n_trees, "Trees -", TTS_result$method, "method"),
       x = 0.5
     ),
     scene = list(
