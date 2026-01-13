@@ -1,9 +1,37 @@
 #' TopTreeSegR: Topology-based Tree Segmentation for TLS Point Clouds
 #' 
-#' @name TopTreeSegR
-#' @docType package
+#' @description 
+#' A package for topology-based tree segmentation from TLS point clouds using
+#' discrete Morse theory, Morse-Smale complexes, and Bayesian inference.
+#'
+#' @details
+#' TopTreeSegR implements advanced topological methods for tree segmentation:
+#' 
+#' **Core Concepts:**
+#' - **Discrete Morse Theory**: Combinatorial framework for topological analysis of discrete data
+#' - **Morse-Smale Complex**: Partition of space into ascending/descending manifolds from critical points
+#' - **Alpha Complex**: Topologically correct subset of Delaunay triangulation for point cloud simplification
+#' - **Forman Gradient**: Discrete vector field representing flow direction on the mesh
+#' - **Bayesian Inference**: Posterior = Prior × Likelihood, with MAP estimation for optimal labeling
+#' - **Gaussian Likelihood**: Models elevation consistency within each tree segment
+#' - **Markovian Prior**: Captures spatial coherence through neighborhood relationships
+#' 
+#' **Key Features:**
+#' - C++-accelerated Morse-Smale complex computation
+#' - Bayesian boundary refinement with spatial and elevation consistency
+#' - Optimized parameters for >0.85 Adjusted Rand Index
+#' - Parallel processing for large datasets
+#' - 3D visualization and validation tools
+#' 
+#' @author Gergő Diószegi
+#' @keywords internal
+"_PACKAGE"
+
+## usethis namespace: start
 #' @useDynLib TopTreeSegR, .registration = TRUE
 #' @importFrom Rcpp sourceCpp
+#' @importFrom Rcpp evalCpp
+## usethis namespace: end
 NULL
 
 .onAttach <- function(libname, pkgname) {
