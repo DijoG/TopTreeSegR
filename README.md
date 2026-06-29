@@ -56,8 +56,11 @@ result <- TopTreeSegR::TTS_pipeline(
 # Boom! You've got individual trees 🎉
 print(result)  
 
-# Visualize the topological segmentation
+# Visualize the topological segmentation (3D)
 TopTreeSegR::plot_TTS_3d(result)
+
+# Visualize the topological segmentation (2D)
+TopTreeSegR::plot_TTS_2d(result, projection = "XZ")
 
 # Validate 
 TopTreeSegR::validate_TTS(result, trees)
@@ -104,9 +107,9 @@ res <- TTS_pipeline(
   prior_strength = 1.0,            # Spatial consistency
   likelihood_strength = 1.6,       # Elevation consistency (key!)
   confidence_threshold = 1.0,      # 1) Aggressive refinement (conf=1.0)
-  cores = 20,
+  cores = 3,
   fix_fragments = TRUE
-) # ~110 seconds
+) # ~6 minutes
 
 validate_TTS(res, trees)  # ARI: 0.8408
 
@@ -116,8 +119,8 @@ res2 <- TTS_BBR(
   prior_strength = 1.0,
   likelihood_strength = 1.6,
   confidence_threshold = 1.9,      # 2) Conservative cleanup, conf=1.9 ~ only very (> 0.9) probable improvements
-  cores = 20
-) # ~10 seconds
+  cores = 3
+) # ~83 seconds
 
 validate_TTS(res2, trees) # ARI: 0.8502
 ```
@@ -125,11 +128,11 @@ validate_TTS(res2, trees) # ARI: 0.8502
 ### Results
 ```r
 # 2D projections
-TopTreeSegR::plot_TTS_2d(res2, projection = "XY")  # Top-down view
-TopTreeSegR::plot_TTS_2d(res2, projection = "XZ")  # Side view
+plot_TTS_2d(res2, projection = "XY")  # Top-down view
+plot_TTS_2d(res2, projection = "XZ")  # Side view
 
 # 3D interactive plot
-TopTreeSegR::plot_TTS_3d(res2)
+plot_TTS_3d(res2)
 ```
 | Input Point Cloud | Segmented Trees |
 |:---:|:---:|
