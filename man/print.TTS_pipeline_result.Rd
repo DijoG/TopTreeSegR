@@ -6,6 +6,11 @@
 \usage{
 \method{print}{TTS_pipeline_result}(x, ...)
 }
+\arguments{
+\item{x}{A TTS_pipeline_result object}
+
+\item{...}{Additional arguments passed to print}
+}
 \description{
 Print Method for Pipeline Results
 }

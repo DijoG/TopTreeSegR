@@ -6,6 +6,11 @@
 \usage{
 \method{print}{TTS_result}(x, ...)
 }
+\arguments{
+\item{x}{A TTS_result object}
+
+\item{...}{Additional arguments passed to print}
+}
 \description{
 Print method for TTS_result
 }

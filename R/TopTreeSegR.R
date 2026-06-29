@@ -23,7 +23,7 @@
 #' - Parallel processing for large datasets
 #' - 3D visualization and validation tools
 #' 
-#' @author Gergő Diószegi
+#' @author Gergo Dioszegi
 #' @keywords internal
 "_PACKAGE"
 
@@ -31,6 +31,10 @@
 #' @useDynLib TopTreeSegR, .registration = TRUE
 #' @importFrom Rcpp sourceCpp
 #' @importFrom Rcpp evalCpp
+#' @importFrom grDevices adjustcolor hsv rainbow
+#' @importFrom graphics legend points
+#' @importFrom utils head
+#' @importFrom magrittr %>%
 ## usethis namespace: end
 NULL
 
@@ -343,15 +347,13 @@ TTS_MRFBR <- function(TTS_result,
 #' @param likelihood_strength Elevation consistency (1.0 = moderate, 2.0 = strong)
 #' @param confidence_threshold How much better new label must be (default: 1.3)
 #' @param cores Number of CPU threads for parallel computation (default: 2)
-#' @param fix_fragments Remove tiny fragments after refinement (default: TRUE)
 #' 
 #' @export
 TTS_BBR <- function(TTS_result,
                     prior_strength = 1.0,
                     likelihood_strength = 2.0,
                     confidence_threshold = 1.3,
-                    cores = 2,
-                    fix_fragments = TRUE) {
+                    cores = 2) {
   
   message("=== Bayesian Boundary Refinement ===\n")
   message("Prior strength: ", prior_strength)
@@ -440,9 +442,6 @@ TTS_BBR <- function(TTS_result,
 #'   - 2.0: Change only if new label is 100% better (twice as good)
 #'   Range: 1.0 to 2.0. Default: 1.0 (aggressive, good for first pass).
 #'   
-#' @param fix_fragments Remove tiny fragments after refinement (default: TRUE)
-#'   Merges clusters with < 30 points into neighboring trees.
-#'   
 #' @param verbose Print progress messages (default: TRUE)
 #'
 #' @return A TTS_result object with the following components:
@@ -490,7 +489,6 @@ TTS_pipeline <- function(las,
                          prior_strength = 1.0,
                          likelihood_strength = 1.6,
                          confidence_threshold = 1.0,
-                         fix_fragments = TRUE,
                          verbose = TRUE) {
   
   if (verbose) {
@@ -505,12 +503,11 @@ TTS_pipeline <- function(las,
     message(sprintf("  Prior strength: %.1f (spatial consistency)", prior_strength))
     message(sprintf("  Likelihood strength: %.1f (elevation consistency)", likelihood_strength))
     message(sprintf("  Confidence threshold: %.1f", confidence_threshold))
-    message(sprintf("  Fix fragments: %s", fix_fragments))
     
     if (confidence_threshold == 1.0) {
-      message("    → Aggressive: changes labels if any improvement")
+      message("    - Aggressive: changes labels if any improvement")
     } else if (confidence_threshold >= 1.5) {
-      message("    → Conservative: changes only if much better")
+      message("    - Conservative: changes only if much better")
     }
   }
   
@@ -528,8 +525,8 @@ TTS_pipeline <- function(las,
   )
   
   if (verbose) {
-    message(sprintf("  ✓ Detected %d trees", result$n_trees))
-    message(sprintf("  ✓ Mesh vertices: %d", nrow(result$mesh_coords)))
+    message(sprintf("  [OK] Detected %d trees", result$n_trees))
+    message(sprintf("  [OK] Mesh vertices: %d", nrow(result$mesh_coords)))
   }
   
   # STEP 2: Single Bayesian refinement
@@ -540,8 +537,7 @@ TTS_pipeline <- function(las,
     prior_strength = prior_strength,
     likelihood_strength = likelihood_strength,
     confidence_threshold = confidence_threshold,
-    cores = cores,
-    fix_fragments = fix_fragments
+    cores = cores
   )
   
   # Store pipeline parameters for reproducibility
@@ -554,8 +550,7 @@ TTS_pipeline <- function(las,
     refinement_params = list(
       prior_strength = prior_strength,
       likelihood_strength = likelihood_strength,
-      confidence_threshold = confidence_threshold,
-      fix_fragments = fix_fragments
+      confidence_threshold = confidence_threshold
     ),
     timestamp = Sys.time()
   )
@@ -569,7 +564,7 @@ TTS_pipeline <- function(las,
     
     # Hint about validation if ground truth column exists
     if ("treeid" %in% names(las@data)) {
-      message("\nℹ Ground truth column 'treeid' detected.")
+      message("\n[INFO] Ground truth column 'treeid' detected.")
       message("  Run validate_TTS(result, las) for accuracy metrics.")
     }
     
@@ -584,6 +579,9 @@ TTS_pipeline <- function(las,
 }
 
 #' Print Method for Pipeline Results
+#'
+#' @param x A TTS_pipeline_result object
+#' @param ... Additional arguments passed to print
 #' @export
 print.TTS_pipeline_result <- function(x, ...) {
   cat("TopTreeSegR Pipeline Result\n")
@@ -604,9 +602,9 @@ print.TTS_pipeline_result <- function(x, ...) {
     # Interpret confidence threshold
     conf = x$pipeline$refinement_params$confidence_threshold
     if (conf == 1.0) {
-      cat("  → Aggressive refinement\n")
+      cat("  - Aggressive refinement\n")
     } else if (conf >= 1.5) {
-      cat("  → Conservative refinement\n")
+      cat("  - Conservative refinement\n")
     }
   }
   
@@ -631,6 +629,9 @@ print.TTS_pipeline_result <- function(x, ...) {
 }
 
 #' Print method for TTS_result
+#'
+#' @param x A TTS_result object
+#' @param ... Additional arguments passed to print
 #' @export
 print.TTS_result <- function(x, ...) {
   cat("TopTreeSegR Result (", x$method, " method)\n", sep = "")
@@ -976,9 +977,9 @@ validate_TTS = function(TTS_result, lasdf, val_col = "treeid", auto_align = TRUE
       pred = aligned_pred
       pred_valid = pred[valid]
       
-      message("✓ Tree IDs automatically aligned")
+      message("[OK] Tree IDs automatically aligned")
     } else {
-      message("⚠ Could not perform optimal alignment (clue package not available)")
+      message("[WARN] Could not perform optimal alignment (clue package not available)")
     }
   }
   
@@ -1083,3 +1084,45 @@ validate_TTS = function(TTS_result, lasdf, val_col = "treeid", auto_align = TRUE
   invisible(results)
 }
 
+#' C++ internal functions
+#' @noRd
+BBR_ultrafast_cpp <- function(coords, labels, prior_strength = 1.0, 
+                              likelihood_strength = 2.0, 
+                              confidence_threshold = 1.3, 
+                              cores = 4) {
+  .Call(`_TopTreeSegR_BBR_ultrafast_cpp`, coords, labels, prior_strength, 
+        likelihood_strength, confidence_threshold, cores)
+}
+
+#' @noRd
+MRFBR_cpp <- function(coords, labels, spatial_sigma = 1.0, 
+                      intensity = 1.0, iterations = 2) {
+  .Call(`_TopTreeSegR_MRFBR_cpp`, coords, labels, spatial_sigma, intensity, iterations)
+}
+
+#' @noRd
+get_mesh_coords_cpp <- function(vertices_df) {
+  .Call(`_TopTreeSegR_get_mesh_coords_cpp`, vertices_df)
+}
+
+#' @noRd
+map_mesh_to_points_cpp <- function(mesh_coords, mesh_labels, point_coords, 
+                                   max_distance = 2.0) {
+  .Call(`_TopTreeSegR_map_mesh_to_points_cpp`, mesh_coords, mesh_labels, 
+        point_coords, max_distance)
+}
+
+#' @noRd
+morse_smale_segment_cpp <- function(vertices_df, morse_complex_data, 
+                                    stem_height = 0.5, spatial_eps = 1.0) {
+  .Call(`_TopTreeSegR_morse_smale_segment_cpp`, vertices_df, morse_complex_data, 
+        stem_height, spatial_eps)
+}
+
+#' @noRd
+tree_segment_cpp <- function(vertices_df, morse_complex_data, 
+                             stem_height = 0.5, spatial_eps = 1.0,
+                             max_distance = 2.0, grid_size = 5.0) {
+  .Call(`_TopTreeSegR_tree_segment_cpp`, vertices_df, morse_complex_data, 
+        stem_height, spatial_eps, max_distance, grid_size)
+}

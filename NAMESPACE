@@ -1,3 +1,22 @@
 useDynLib(TopTreeSegR, .registration=TRUE)
 importFrom(Rcpp, evalCpp)
-exportPattern("^[[:alpha:]]+")
+importFrom(grDevices, adjustcolor)
+importFrom(grDevices, hsv)
+importFrom(grDevices, rainbow)
+importFrom(graphics, legend)
+importFrom(graphics, points)
+importFrom(utils, head)
+importFrom(magrittr, `%>%`)
+
+# User-facing functions
+export(TTS_pipeline)
+export(TTS_segmentation)
+export(TTS_BBR)
+export(TTS_MRFBR)
+export(plot_TTS_3d)
+export(plot_TTS_2d)
+export(validate_TTS)
+
+# S3 methods
+S3method(print, TTS_pipeline_result)
+S3method(print, TTS_result)

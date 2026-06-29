@@ -1219,7 +1219,7 @@ int changes = 0;
 #pragma omp parallel num_threads(cores) reduction(+:changes)
 {
   // Thread-local random number generator for tie-breaking
-  unsigned int seed = omp_get_thread_num() + 1;
+  // unsigned int seed = omp_get_thread_num() + 1;
   
 #pragma omp for schedule(dynamic, 64)
   for (int idx = 0; idx < boundary_count; idx++) {
@@ -1248,7 +1248,7 @@ int changes = 0;
         
         int cell_idx = ngy * grid_x + ngx;
         const auto& cell_points = grid[cell_idx];
-        const auto& cell_zs = grid_z[cell_idx];
+        // const auto& cell_zs = grid_z[cell_idx];
         
         for (size_t j_idx = 0; j_idx < cell_points.size(); j_idx++) {
           int j = cell_points[j_idx];

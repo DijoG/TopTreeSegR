@@ -6,9 +6,11 @@
 ![C++](https://img.shields.io/badge/C++-RcppArmadillo-blue?style=for-the-badge&logo=cplusplus)
 ![Development](https://img.shields.io/badge/Development-brightgreen?style=for-the-badge)
 
-**Blazing-fast individual tree segmentation from terrestrial LiDAR point clouds using Discrete Morse Theory with Bayesian refinement achieveing >0.85 Adjusted Rand Index (ARI).**
+**Blazing-fast individual tree segmentation from terrestrial LiDAR point clouds using Discrete Morse Theory with Bayesian refinement achieving >0.85 Adjusted Rand Index (ARI).**
 
-`TopTreeSegR` combines **Morse-Smale complex analysis** with **Bayesian boundary optimization** to achieve state-of-the-art tree segmentation accuracy. This R package delivers a production-ready pipeline that transforms raw points into clean, validated tree segments in under two minutes for a typical plot.
+`TopTreeSegR` combines **Morse-Smale complex analysis** with **Bayesian boundary optimization** to achieve state-of-the-art tree segmentation accuracy. This R package delivers a production-ready pipeline that transforms raw LiDAR points into clean, validated tree segments in under two minutes for a typical plot.
+
+> **⚠️ Important:** TopTreeSegR segments the **alpha-complex mesh** (Delaunay triangulation), **not** the original raw point cloud. The mesh captures the essential tree structure while reducing point count by ~90% for **ultra-fast processing**.
 
 🎯 Core Features: >0.85 ARI | Single TTS_pipeline() | Bayesian refinement | Full validation suite | Interactive 3D viz
 
@@ -20,13 +22,19 @@
 
 ### Installation
 ```r
-# Install from GitHub
-remotes::install_github(c("DijoG/ahull3D", "DijoG/DiscreteMorseR", "DijoG/TopTreeSegR"))
+# Important: ahull3D, DiscreteMorseR, and lidR are not on CRAN
+# Install them from GitHub first:
 
-# Install CRAN dependencies
-install.packages(c("lidR", "dbscan", "FNN", "plotly")) 
+remotes::install_github("DijoG/ahull3D")
+remotes::install_github("DijoG/DiscreteMorseR")
+remotes::install_github("r-lidar/lidR")
 
-# Load the package
+# Install TopTreeSegR
+remotes::install_github("DijoG/TopTreeSegR")
+
+# Additional dependencies from CRAN
+install.packages(c("dbscan", "FNN", "plotly", "tictoc"))
+
 library(TopTreeSegR)
 ```
 
@@ -141,27 +149,31 @@ RAW POINTS → ALPHA-COMPLEX → MORSE COMPLEX → SEGMENTATION → BAYESIAN REF
 `TopTreeSegR` uses Discrete Morse Theory to segment trees by analyzing the topological structure of the point cloud:
 
 ```text
-🔄 1. Alpha-Complex Construction 
-    - Convert discrete points to topological mesh
-    - Simplify using alpha-shape filtration
-    - Create combinatorial representation for Morse analysis
+🔺 1. Delaunay Triangulation
+    - Convert discrete points to a continuous triangular mesh
+    - Preserves topological connectivity of the forest structure
 
-🎯 2. Morse Complex Computation
-    - Compute discrete gradient vector field
+🔺 2. Alpha-Complex Construction
+    - Simplify triangulation using alpha-shape filtration
+    - Removes noisy edges and isolates tree structures
+    - Output: **134K mesh vertices** (from 1.2M input points)
+
+🎯 3. Morse Complex Computation
+    - Compute discrete gradient vector field on the mesh
     - Identify critical points (minima, maxima, saddles)
     - Tree trunks correspond to Morse minima (lowest points in each tree)
 
-🌊 3. Morse-Smale Complex Analysis
+🌊 4. Morse-Smale Complex Analysis
     - Partition mesh into ascending/descending manifolds
     - Each minimum's ascending manifold = influence region of a tree
     - Points flow downhill to their corresponding trunk minimum
 
-🔍 4. Seed Detection & Initial Segmentation
+🔍 5. Seed Detection & Initial Segmentation
     - Cluster low minima near ground as tree trunks
-    - Assign each point to the trunk whose ascending manifold it belongs to
+    - Assign each mesh vertex to the trunk whose ascending manifold it belongs to
     - Create initial tree segments based on gradient flow structure
 
-🧠 5. Bayesian Boundary Refinement (Key Innovation!)
+🧠 6. Bayesian Boundary Refinement (Key Innovation!)
     - Identify boundary points between trees
     - Compute posterior probabilities using:
         • Prior: Neighborhood label consistency
@@ -169,10 +181,10 @@ RAW POINTS → ALPHA-COMPLEX → MORSE COMPLEX → SEGMENTATION → BAYESIAN REF
     - Perform Maximum A Posteriori (MAP) estimation
     - Fix boundary errors using elevation consistency
 
-✅ 6. Post-Processing
-    - Merge small fragments into neighboring trees
-    - Ensure the connected component
-    - Output clean individual tree segments
+✅ 7. Output
+    - Tree labels assigned to mesh vertices
+    - Bayesian refinement improves boundary accuracy
+    - Clean individual tree segments (mesh vertices labeled)
 ```
 ## Key Features
 

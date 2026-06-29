@@ -9,8 +9,7 @@ TTS_BBR(
   prior_strength = 1,
   likelihood_strength = 2,
   confidence_threshold = 1.3,
-  cores = 2,
-  fix_fragments = TRUE
+  cores = 2
 )
 }
 \arguments{
@@ -23,8 +22,6 @@ TTS_BBR(
 \item{confidence_threshold}{How much better new label must be (default: 1.3)}
 
 \item{cores}{Number of CPU threads for parallel computation (default: 2)}
-
-\item{fix_fragments}{Remove tiny fragments after refinement (default: TRUE)}
 }
 \description{
 Bayesian Boundary Refinement

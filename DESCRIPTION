@@ -7,15 +7,23 @@ Authors@R:
         given = "Gergo",
         family = "Dioszegi",
         email = "dijogergo@gmail.com",
-        role = c("aut", "cre", "cph")
+        role = c("aut", "cre", "cph"),
+        comment = c(ORCID = "0009-0003-3454-9093")
     )
 Description: Ultra-fast topology-based tree segmentation from LiDAR point clouds 
-    using Discrete Morse Theory and RcppArmadillo. Implements Morse-Smale complex 
-    analysis with Bayesian boundary refinement achieving >0.85 Adjusted Rand Index 
+    using Discrete Morse (Marston Morse) Theory and RcppArmadillo. Implements Morse-Smale 
+    complex analysis with Bayesian boundary refinement achieving >0.85 Adjusted Rand Index 
     (ARI) on benchmark datasets. Key features: Morse-Smale and gradient flow 
     segmentation methods, Bayesian boundary refinement with uncertainty quantification, 
     ultra-fast C++ implementation with OpenMP parallel processing, production-ready 
     pipeline with proven >0.85 ARI performance, 3D visualization and validation tools.
+    The implementation follows Forman (1998) <doi:10.1007/PL00009307> for 
+    discrete Morse theory. The lower star algorithm (Robins et al., 2011) 
+    <doi:10.1109/TPAMI.2010.204> is used to compute the Forman gradient. 
+    Novel contributions include: (i) extension of lower star processing from 
+    2D images to 3D triangular meshes; (ii) a tree-specific segmentation 
+    pipeline using ascending manifold propagation; (iii) Bayesian boundary 
+    refinement with elevation-consistent priors for crown delineation.
 License: MIT + file LICENSE
 URL:
     https://github.com/DijoG/TopTreeSegR,
@@ -24,14 +32,12 @@ BugReports: https://github.com/DijoG/TopTreeSegR/issues
 Encoding: UTF-8
 Imports:
     Rcpp (>= 1.0.10),
+    magrittr
+Suggests:
+    ahull3D,
+    DiscreteMorseR,
     dbscan (>= 1.1.11),
     FNN (>= 1.1.3.1),
-    lidR (>= 4.0.3),
-    methods,
-    parallel,
-    stats,
-    utils
-Suggests:
     testthat (>= 3.0.0),
     knitr,
     rmarkdown,
@@ -40,10 +46,8 @@ Suggests:
     clue,
     viridis,
     ggplot2,
-    covr
-Remotes:
-    DijoG/ahull3D,
-    DijoG/DiscreteMorseR
+    covr,
+    clustermq
 LinkingTo:
     Rcpp,
     RcppArmadillo

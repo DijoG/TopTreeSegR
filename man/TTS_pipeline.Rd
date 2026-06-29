@@ -15,7 +15,6 @@ TTS_pipeline(
   prior_strength = 1,
   likelihood_strength = 1.6,
   confidence_threshold = 1,
-  fix_fragments = TRUE,
   verbose = TRUE
 )
 }
@@ -52,9 +51,6 @@ Higher values = more conservative refinement (changes fewer labels).
 \item 2.0: Change only if new label is 100\% better (twice as good)
 Range: 1.0 to 2.0. Default: 1.0 (aggressive, good for first pass).
 }}
-
-\item{fix_fragments}{Remove tiny fragments after refinement (default: TRUE)
-Merges clusters with < 30 points into neighboring trees.}
 
 \item{verbose}{Print progress messages (default: TRUE)}
 }
