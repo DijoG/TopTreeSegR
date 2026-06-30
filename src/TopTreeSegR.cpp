@@ -1065,7 +1065,7 @@ IntegerVector MRFBR_cpp(const arma::mat& coords,
   return current_labels;
 }
 
-// Bayesian Boundary Refinement (BBR) with smart decisions
+// Bayesian Boundary Refinement (BBR) - COMPLETE THREAD-SAFE VERSION
 // [[Rcpp::export]]
 List BBR_ultrafast_cpp(const arma::mat& coords,
                        const IntegerVector& labels,
@@ -1075,38 +1075,39 @@ List BBR_ultrafast_cpp(const arma::mat& coords,
                        int cores = 4) {
   
   int n = coords.n_rows;
+  if (n == 0) Rcpp::stop("Empty coordinates");
+  if (labels.size() != n) Rcpp::stop("labels size != coordinates rows");
+  
   IntegerVector refined = clone(labels);
   
-  Rcout << "ULTRA-FAST Bayesian Boundary Refinement: " << n << " points\n";
+  Rcout << "\n=== BBR Parallel Refinement (Thread-Safe) ===\n";
+  Rcout << "Points: " << n << " | Threads: " << cores << "\n";
   
-  // 1. SUPER FAST GRID BUILDING
+  // --- 1. Grid parameters ---
   const double grid_size = 4.0;
-  const double boundary_dist = 2.0;
-  const double boundary_dist_sq = boundary_dist * boundary_dist;
-  const double neighbor_dist = 4.0;
-  const double neighbor_dist_sq = neighbor_dist * neighbor_dist;
+  const double boundary_dist_sq = 4.0;   // 2.0^2
+  const double neighbor_dist_sq = 16.0;  // 4.0^2
   
   double min_x = arma::min(coords.col(0));
   double max_x = arma::max(coords.col(0));
   double min_y = arma::min(coords.col(1));
   double max_y = arma::max(coords.col(1));
+  double range_x = max_x - min_x + 1e-9;
+  double range_y = max_y - min_y + 1e-9;
   
-  int grid_x = std::max(1, (int)std::ceil((max_x - min_x) / grid_size));
-  int grid_y = std::max(1, (int)std::ceil((max_y - min_y) / grid_size));
+  int grid_x = std::max(1, (int)std::ceil(range_x / grid_size));
+  int grid_y = std::max(1, (int)std::ceil(range_y / grid_size));
   int grid_cells = grid_x * grid_y;
   
-  // Use arrays for speed
-  std::vector<std::vector<int>> grid(grid_cells);
-  std::vector<std::vector<float>> grid_z(grid_cells);
+  Rcout << "Grid: " << grid_x << "x" << grid_y << " = " << grid_cells << " cells\n";
   
-  // Pre-allocate
-#pragma omp parallel for num_threads(cores)
-  for (int i = 0; i < grid_cells; i++) {
-    grid[i].reserve(128);
-    grid_z[i].reserve(128);
-  }
+  // --- 2. FLAT GRID ARRAYS (Cache-friendly, thread-safe) ---
+  std::vector<int> cell_counts(grid_cells, 0);
+  std::vector<int> point_cells(n);
+  std::vector<int> valid_points;
+  valid_points.reserve(n);
   
-  // Fill grid
+  // First pass: count points per cell and collect valid points
   for (int i = 0; i < n; i++) {
     if (labels[i] == 0) continue;
     
@@ -1114,54 +1115,165 @@ List BBR_ultrafast_cpp(const arma::mat& coords,
     int gy = (int)((coords(i, 1) - min_y) / grid_size);
     gx = std::max(0, std::min(gx, grid_x - 1));
     gy = std::max(0, std::min(gy, grid_y - 1));
+    int cell = gy * grid_x + gx;
     
-    int cell_idx = gy * grid_x + gx;
-    grid[cell_idx].push_back(i);
-    grid_z[cell_idx].push_back(coords(i, 2));
+    point_cells[i] = cell;
+    cell_counts[cell]++;
+    valid_points.push_back(i);
   }
   
-  // 2. IDENTIFY BOUNDARY POINTS ONLY (FAST PARALLEL)
-  std::vector<char> is_boundary(n, 0); // Use char for cache efficiency
-  std::vector<int> boundary_indices;
-  boundary_indices.reserve(n / 2); // Reserve ~50%
+  int n_valid = valid_points.size();
+  Rcout << "Valid points: " << n_valid << " (" << 100.0 * n_valid / n << "%)\n";
   
+  if (n_valid == 0) {
+    Rcout << "No valid points found!\n";
+    return List::create(
+      _["labels"] = refined,
+      _["uncertainties"] = NumericVector(n, 0.0),
+      _["changes"] = 0,
+      _["boundary_points"] = 0,
+      _["change_ratio"] = 0.0
+    );
+  }
+  
+  // Build prefix sums
+  std::vector<int> cell_starts(grid_cells + 1, 0);
+  int total_points = 0;
+  for (int c = 0; c < grid_cells; c++) {
+    cell_starts[c] = total_points;
+    total_points += cell_counts[c];
+  }
+  cell_starts[grid_cells] = total_points;
+  
+  // Fill flat cell array
+  std::vector<int> cell_points(total_points);
+  std::vector<int> cell_pos = cell_starts; // Running positions
+  
+  for (int i = 0; i < n; i++) {
+    if (labels[i] == 0) continue;
+    int cell = point_cells[i];
+    int pos = cell_pos[cell]++;
+    cell_points[pos] = i;
+  }
+  
+  // --- 3. THREAD-SAFE REGION STATISTICS ---
+  // Get unique labels
+  std::unordered_set<int> unique_labels_set;
+  for (int i = 0; i < n; i++) {
+    if (labels[i] > 0) unique_labels_set.insert(labels[i]);
+  }
+  
+  std::vector<int> label_vec(unique_labels_set.begin(), unique_labels_set.end());
+  std::sort(label_vec.begin(), label_vec.end()); // Deterministic order
+  
+  std::unordered_map<int, int> label_to_idx;
+  label_to_idx.reserve(label_vec.size());
+  for (size_t i = 0; i < label_vec.size(); i++) {
+    label_to_idx[label_vec[i]] = i;
+  }
+  int n_labels = label_vec.size();
+  
+  Rcout << "Unique labels: " << n_labels << "\n";
+  
+  // Per-thread statistics using flat arrays (cache-friendly)
+  std::vector<std::vector<double>> thread_sum_z(cores, std::vector<double>(n_labels, 0.0));
+  std::vector<std::vector<double>> thread_sum_z2(cores, std::vector<double>(n_labels, 0.0));
+  std::vector<std::vector<int>> thread_counts(cores, std::vector<int>(n_labels, 0));
+  
+  // Parallel accumulation with minimal contention
+#pragma omp parallel num_threads(cores)
+{
+  int tid = omp_get_thread_num();
+  auto& local_sum_z = thread_sum_z[tid];
+  auto& local_sum_z2 = thread_sum_z2[tid];
+  auto& local_counts = thread_counts[tid];
+  
+#pragma omp for schedule(static, 256)
+  for (int i = 0; i < n; i++) {
+    int label = labels[i];
+    if (label == 0) continue;
+    auto it = label_to_idx.find(label);
+    if (it == label_to_idx.end()) continue;
+    int idx = it->second;
+    double z = coords(i, 2);
+    local_sum_z[idx] += z;
+    local_sum_z2[idx] += z * z;
+    local_counts[idx]++;
+  }
+}
+
+// Merge statistics
+std::vector<double> label_sum_z(n_labels, 0.0);
+std::vector<double> label_sum_z2(n_labels, 0.0);
+std::vector<int> label_count(n_labels, 0);
+
+for (int t = 0; t < cores; t++) {
+  for (int i = 0; i < n_labels; i++) {
+    label_sum_z[i] += thread_sum_z[t][i];
+    label_sum_z2[i] += thread_sum_z2[t][i];
+    label_count[i] += thread_counts[t][i];
+  }
+}
+
+// Compute means and variances
+std::vector<double> label_mean_z(n_labels, 0.0);
+std::vector<double> label_var_z(n_labels, 1.0);
+
+for (int i = 0; i < n_labels; i++) {
+  if (label_count[i] > 1) {
+    double mean = label_sum_z[i] / label_count[i];
+    double var = (label_sum_z2[i] / label_count[i]) - mean * mean;
+    label_mean_z[i] = mean;
+    label_var_z[i] = std::max(0.01, var);
+  } else if (label_count[i] == 1) {
+    label_mean_z[i] = label_sum_z[i];
+    label_var_z[i] = 0.01;
+  }
+}
+
+// --- 4. IDENTIFY BOUNDARY POINTS (Thread-safe) ---
+std::vector<char> is_boundary(n, 0);
+std::vector<int> boundary_indices;
+boundary_indices.reserve(n / 2);
+
 #pragma omp parallel num_threads(cores)
 {
   std::vector<int> local_boundary;
+  local_boundary.reserve(n / 8);
   
-#pragma omp for nowait schedule(static, 256)
+#pragma omp for schedule(static, 256)
   for (int i = 0; i < n; i++) {
     if (labels[i] == 0) continue;
     
     int current_label = labels[i];
     double xi = coords(i, 0);
     double yi = coords(i, 1);
+    int cell = point_cells[i];
+    int gx = cell % grid_x;
+    int gy = cell / grid_x;
     
-    int gx = (int)((xi - min_x) / grid_size);
-    int gy = (int)((yi - min_y) / grid_size);
+    bool is_bound = false;
     
-    bool boundary_found = false;
-    
-    // Check only immediate neighbors (4 cells) for speed
-    for (int dx = -1; dx <= 1 && !boundary_found; dx++) {
-      for (int dy = -1; dy <= 1 && !boundary_found; dy++) {
+    // Check 3x3 neighborhood
+    for (int dx = -1; dx <= 1 && !is_bound; dx++) {
+      for (int dy = -1; dy <= 1 && !is_bound; dy++) {
         int ngx = gx + dx;
         int ngy = gy + dy;
-        
         if (ngx < 0 || ngx >= grid_x || ngy < 0 || ngy >= grid_y) continue;
         
-        int cell_idx = ngy * grid_x + ngx;
-        const auto& cell_points = grid[cell_idx];
+        int ncell = ngy * grid_x + ngx;
+        int start = cell_starts[ncell];
+        int end = cell_starts[ncell + 1];
         
-        for (int j : cell_points) {
+        for (int p = start; p < end; p++) {
+          int j = cell_points[p];
           if (i == j) continue;
           
           double dx_val = xi - coords(j, 0);
           double dy_val = yi - coords(j, 1);
-          double dist_sq = dx_val*dx_val + dy_val*dy_val;
-          
-          if (dist_sq < boundary_dist_sq && labels[j] != current_label) {
-            boundary_found = true;
+          if (dx_val*dx_val + dy_val*dy_val < boundary_dist_sq && 
+              labels[j] != current_label) {
+            is_bound = true;
             local_boundary.push_back(i);
             break;
           }
@@ -1183,75 +1295,72 @@ int boundary_count = boundary_indices.size();
 Rcout << "Boundary points: " << boundary_count << " (" 
       << 100.0 * boundary_count / n << "%)\n";
 
-// 3. PRE-COMPUTE REGION STATISTICS (Z distribution per label)
-std::unordered_map<int, double> label_sum_z;
-std::unordered_map<int, double> label_sum_z2;
-std::unordered_map<int, int> label_count;
-
-for (int i = 0; i < n; i++) {
-  int label = labels[i];
-  if (label == 0) continue;
-  
-  double z = coords(i, 2);
-  label_sum_z[label] += z;
-  label_sum_z2[label] += z * z;
-  label_count[label]++;
+if (boundary_count == 0) {
+  Rcout << "No boundary points found - returning original labels\n";
+  return List::create(
+    _["labels"] = refined,
+    _["uncertainties"] = NumericVector(n, 0.0),
+    _["changes"] = 0,
+    _["boundary_points"] = 0,
+    _["change_ratio"] = 0.0
+  );
 }
 
-// Compute means and variances
-std::unordered_map<int, double> label_mean_z;
-std::unordered_map<int, double> label_var_z;
+// --- 5. THREAD-SAFE BAYESIAN REFINEMENT ---
+// Use thread-local FIXED arrays for deterministic iteration
+const int MAX_LABELS = 64;
+std::vector<std::array<int, MAX_LABELS>> thread_labels(cores);
+std::vector<std::array<double, MAX_LABELS>> thread_weights(cores);
+std::vector<int> thread_label_counts(cores, 0);
 
-for (const auto& pair : label_count) {
-  int label = pair.first;
-  double count = pair.second;
-  double mean_z = label_sum_z[label] / count;
-  double var_z = std::max(0.1, (label_sum_z2[label] / count) - mean_z * mean_z);
-  
-  label_mean_z[label] = mean_z;
-  label_var_z[label] = var_z;
-}
-
-// 4. ULTRA-FAST BAYESIAN REFINEMENT (ONLY BOUNDARIES)
 std::vector<double> uncertainties(n, 0.0);
 int changes = 0;
 
+// Pre-compute constants for speed
+const double inv_sqrt_two_pi = 0.3989422804014327; // 1/sqrt(2*pi)
+const double two_pi = 6.283185307179586;
+
 #pragma omp parallel num_threads(cores) reduction(+:changes)
 {
-  // Thread-local random number generator for tie-breaking
-  // unsigned int seed = omp_get_thread_num() + 1;
+  int tid = omp_get_thread_num();
+  auto& local_labels = thread_labels[tid];
+  auto& local_weights = thread_weights[tid];
+  int& local_count = thread_label_counts[tid];
   
-#pragma omp for schedule(dynamic, 64)
-  for (int idx = 0; idx < boundary_count; idx++) {
-    int i = boundary_indices[idx];
+#pragma omp for schedule(dynamic, 128)
+  for (int b = 0; b < boundary_count; b++) {
+    int i = boundary_indices[b];
+    
+    // Reset thread-local arrays (keep capacity)
+    local_count = 0;
     
     int current_label = labels[i];
     double current_z = coords(i, 2);
     double xi = coords(i, 0);
     double yi = coords(i, 1);
+    int cell = point_cells[i];
+    int gx = cell % grid_x;
+    int gy = cell / grid_x;
     
-    int gx = (int)((xi - min_x) / grid_size);
-    int gy = (int)((yi - min_y) / grid_size);
-    
-    // SMARTER NEIGHBOR COLLECTION: Only collect unique labels with weights
-    std::unordered_map<int, double> label_weights;
-    label_weights[current_label] = 1.0; // Self-prior
+    // Self weight (always first for deterministic order)
+    local_labels[0] = current_label;
+    local_weights[0] = 1.0;
+    local_count = 1;
     double total_weight = 1.0;
     
-    // Check 3x3 grid neighborhood
+    // Check 3x3 neighborhood
     for (int dx = -1; dx <= 1; dx++) {
       for (int dy = -1; dy <= 1; dy++) {
         int ngx = gx + dx;
         int ngy = gy + dy;
-        
         if (ngx < 0 || ngx >= grid_x || ngy < 0 || ngy >= grid_y) continue;
         
-        int cell_idx = ngy * grid_x + ngx;
-        const auto& cell_points = grid[cell_idx];
-        // const auto& cell_zs = grid_z[cell_idx];
+        int ncell = ngy * grid_x + ngx;
+        int start = cell_starts[ncell];
+        int end = cell_starts[ncell + 1];
         
-        for (size_t j_idx = 0; j_idx < cell_points.size(); j_idx++) {
-          int j = cell_points[j_idx];
+        for (int p = start; p < end; p++) {
+          int j = cell_points[p];
           if (i == j) continue;
           
           double dx_val = xi - coords(j, 0);
@@ -1260,67 +1369,82 @@ int changes = 0;
           
           if (dist_sq < neighbor_dist_sq) {
             int neighbor_label = labels[j];
-            double weight = std::exp(-std::sqrt(dist_sq) / 2.0) * prior_strength;
+            double dist = std::sqrt(dist_sq);
+            double weight = std::exp(-dist * 0.5) * prior_strength;
             
-            label_weights[neighbor_label] += weight;
+            // Linear search (MAX_LABELS is small, deterministic)
+            bool found = false;
+            for (int k = 0; k < local_count; k++) {
+              if (local_labels[k] == neighbor_label) {
+                local_weights[k] += weight;
+                found = true;
+                break;
+              }
+            }
+            
+            if (!found && local_count < MAX_LABELS) {
+              local_labels[local_count] = neighbor_label;
+              local_weights[local_count] = weight;
+              local_count++;
+            }
+            
             total_weight += weight;
           }
         }
       }
     }
     
-    // BAYESIAN INFERENCE WITH PRE-COMPUTED STATISTICS
+    // Bayesian inference (deterministic iteration over local arrays)
     double max_posterior = -1.0;
     int best_label = current_label;
+    double best_posterior_current = -1.0;
     
-    for (const auto& pair : label_weights) {
-      int label = pair.first;
-      double prior = pair.second / total_weight;
+    for (int k = 0; k < local_count; k++) {
+      int label = local_labels[k];
+      double prior = local_weights[k] / total_weight;
       
-      // Use pre-computed region statistics
-      double mean_z = label_mean_z[label];
-      double var_z = label_var_z[label];
+      auto it = label_to_idx.find(label);
+      if (it == label_to_idx.end()) continue;
+      int li = it->second;
       
-      // Fast Gaussian likelihood
+      double mean_z = label_mean_z[li];
+      double var_z = label_var_z[li];
+      
+      // Numerically stable Gaussian likelihood
       double z_diff = current_z - mean_z;
-      double z_score_sq = z_diff * z_diff / (2.0 * var_z);
-      double likelihood = std::exp(-z_score_sq) / std::sqrt(var_z * 6.283185);
+      double z_score_sq = (z_diff * z_diff) / (2.0 * var_z);
       
-      // Posterior = Prior * Likelihood^strength
+      double likelihood;
+      if (z_score_sq > 20.0) {
+        likelihood = 0.0; // Underflow protection
+      } else {
+        likelihood = std::exp(-z_score_sq) * (inv_sqrt_two_pi / std::sqrt(var_z));
+      }
+      
       double posterior = prior * std::pow(likelihood, likelihood_strength);
       
       if (posterior > max_posterior) {
         max_posterior = posterior;
         best_label = label;
-      } else if (std::abs(posterior - max_posterior) < 1e-6) {
-        // Tie-breaking: prefer current label or smaller label
-        if (label == current_label) {
-          best_label = current_label;
-        } else if (label < best_label) {
-          // For deterministic tie-breaking
-          best_label = label;
-        }
+      }
+      
+      // Track current label posterior
+      if (label == current_label) {
+        best_posterior_current = posterior;
       }
     }
     
-    // CONFIDENCE-BASED DECISION
-    double current_posterior = label_weights[current_label] / total_weight *
-      std::pow(std::exp(-(current_z - label_mean_z[current_label])*
-      (current_z - label_mean_z[current_label]) / 
-      (2.0 * label_var_z[current_label])) / 
-      std::sqrt(label_var_z[current_label] * 6.283185), 
-      likelihood_strength);
-    
-    // Only change if MUCH better (reduces noise)
-    if (best_label != current_label && max_posterior > current_posterior * confidence_threshold) {
+    // Confidence-based decision
+    if (best_label != current_label && 
+        max_posterior > best_posterior_current * confidence_threshold) {
       refined[i] = best_label;
       changes++;
     }
     
-    // Fast uncertainty computation
+    // Compute uncertainty (entropy)
     double entropy = 0.0;
-    for (const auto& pair : label_weights) {
-      double p = pair.second / total_weight;
+    for (int k = 0; k < local_count; k++) {
+      double p = local_weights[k] / total_weight;
       if (p > 1e-6) {
         entropy -= p * std::log(p);
       }
@@ -1329,41 +1453,54 @@ int changes = 0;
   }
 }
 
-Rcout << "Changed " << changes << " labels (" 
+Rcout << "Changed: " << changes << " labels (" 
       << 100.0 * changes / boundary_count << "% of boundaries)\n";
 
-// 5. POST-PROCESSING: Remove tiny fragments (optional but fast)
+// --- 6. POST-PROCESSING: Fix tiny fragments (thread-safe) ---
 if (changes > 0) {
   // Count new label sizes
   std::unordered_map<int, int> new_label_counts;
+  new_label_counts.reserve(n_labels * 2);
+  
   for (int i = 0; i < n; i++) {
     if (refined[i] > 0) {
       new_label_counts[refined[i]]++;
     }
   }
   
-  // Merge very small regions (< 30 points) back to original
   int fragment_fixes = 0;
+  const int MIN_FRAGMENT_SIZE = 30;
+  
 #pragma omp parallel for reduction(+:fragment_fixes)
   for (int i = 0; i < n; i++) {
-    if (refined[i] > 0 && new_label_counts[refined[i]] < 30) {
-      refined[i] = labels[i]; // Revert to original
-      fragment_fixes++;
+    if (refined[i] > 0) {
+      auto it = new_label_counts.find(refined[i]);
+      if (it != new_label_counts.end() && it->second < MIN_FRAGMENT_SIZE) {
+        refined[i] = labels[i]; // Revert to original
+        fragment_fixes++;
+      }
     }
   }
   
   if (fragment_fixes > 0) {
-    Rcout << "Fixed " << fragment_fixes << " tiny fragments\n";
+    Rcout << "Fixed: " << fragment_fixes << " tiny fragments\n";
     changes -= fragment_fixes;
   }
 }
 
+// --- 7. Final statistics ---
+double change_ratio = boundary_count > 0 ? (double)changes / boundary_count : 0.0;
+
+Rcout << "Final changes: " << changes << " (" 
+      << 100.0 * change_ratio << "% of boundaries)\n";
+
+// --- 8. Return results ---
 return List::create(
   _["labels"] = refined,
   _["uncertainties"] = uncertainties,
   _["changes"] = changes,
   _["boundary_points"] = boundary_count,
-  _["change_ratio"] = (double)changes / boundary_count
+  _["change_ratio"] = change_ratio
 );
 }
 
