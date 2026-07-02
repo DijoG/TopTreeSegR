@@ -70,16 +70,16 @@ TopTreeSegR::validate_TTS(result, trees)
 ```r
 # Complete pipeline benchmark
 tictoc::tic()
-result <- TTS_pipeline(trees, cores = 20)
+result <- TTS_pipeline(trees, cores = 8)
 tictoc::toc()
-# 106.74 seconds (~1.8 minutes)
+# 118.68 seconds (~2 minutes)
 
 validate_TTS(result, trees)
 ```
 ```text
 === TTS Segmentation Validation ===
 
-✓ Tree IDs automatically aligned
+Tree IDs automatically aligned
 Points: 232420 | Pred trees: 5 | True trees: 5
 Match rate: 100.0%
 
@@ -107,22 +107,23 @@ res <- TTS_pipeline(
   prior_strength = 1.0,            # Spatial consistency
   likelihood_strength = 1.6,       # Elevation consistency (key!)
   confidence_threshold = 1.0,      # 1) Aggressive refinement (conf=1.0)
-  cores = 3,
+  cores = 16,
   fix_fragments = TRUE
-) # ~6 minutes
+) # ~2 minutes
 
 validate_TTS(res, trees)  # ARI: 0.8408
 
 # Second BBR pass
+tictoc::tic()
 res2 <- TTS_BBR(
   res1,
   prior_strength = 1.0,
   likelihood_strength = 1.6,
   confidence_threshold = 1.9,      # 2) Conservative cleanup, conf=1.9 ~ only very (> 0.9) probable improvements
-  cores = 3
-) # ~83 seconds
+  cores = 16) 
+tictoc::toc()# ~83 seconds
 
-validate_TTS(res2, trees) # ARI: 0.8502
+validate_TTS(res2, trees) # ARI: 0.8501
 ```
 
 ### Results

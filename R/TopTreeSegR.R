@@ -145,7 +145,7 @@ TTS_segmentation <- function(las,
   message("2. Computing Morse complex...")
   morse_complex = DiscreteMorseR::compute_MORSE_complex(
     mesh, 
-    output_dir = tempdir(), 
+    output_dir = NULL, 
     cores = cores
   )
   

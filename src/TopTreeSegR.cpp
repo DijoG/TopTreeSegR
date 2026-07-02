@@ -1318,7 +1318,7 @@ int changes = 0;
 
 // Pre-compute constants for speed
 const double inv_sqrt_two_pi = 0.3989422804014327; // 1/sqrt(2*pi)
-const double two_pi = 6.283185307179586;
+// const double two_pi = 6.283185307179586;
 
 #pragma omp parallel num_threads(cores) reduction(+:changes)
 {

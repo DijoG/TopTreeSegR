@@ -36,7 +36,6 @@ TopTreeSegR implements advanced topological methods for tree segmentation:
 Useful links:
 \itemize{
   \item \url{https://github.com/DijoG/TopTreeSegR}
-  \item \url{https://dijog.github.io/TopTreeSegR/}
   \item Report bugs at \url{https://github.com/DijoG/TopTreeSegR/issues}
 }
 

@@ -19,23 +19,27 @@ Description: Ultra-fast topology-based tree segmentation from LiDAR point clouds
     pipeline with proven >0.85 ARI performance, 3D visualization and validation tools.
     The implementation follows Forman (1998) <doi:10.1007/PL00009307> for 
     discrete Morse theory. The lower star algorithm (Robins et al., 2011) 
-    <doi:10.1109/TPAMI.2010.204> is used to compute the Forman gradient. 
-    Novel contributions include: (i) extension of lower star processing from 
-    2D images to 3D triangular meshes; (ii) a tree-specific segmentation 
-    pipeline using ascending manifold propagation; (iii) Bayesian boundary 
-    refinement with elevation-consistent priors for crown delineation.
+    <doi:10.1109/TPAMI.2010.204> is used to compute the Forman gradient.
+    The topological segmentation approach is inspired by Xu et al. (2023) 
+    <doi:10.1016/j.jag.2022.103145>, with significant enhancements including 
+    Bayesian boundary refinement, MRF-based smoothing, and parallel C++ 
+    acceleration. Unlike Xu et al. which labels all input points, TopTreeSegR 
+    operates on the alpha-complex mesh representation, reducing point counts 
+    by up to 90% while preserving sufficient topological detail for accurate 
+    forest metrics (DBH, height, volume, canopy structure).
 License: MIT + file LICENSE
-URL:
-    https://github.com/DijoG/TopTreeSegR,
-    https://dijog.github.io/TopTreeSegR/
+URL: https://github.com/DijoG/TopTreeSegR
 BugReports: https://github.com/DijoG/TopTreeSegR/issues
 Encoding: UTF-8
 Imports:
-    Rcpp (>= 1.0.10),
-    magrittr
-Suggests:
     ahull3D,
     DiscreteMorseR,
+    Rcpp (>= 1.0.10),
+    grDevices,
+    graphics,
+    utils,
+    magrittr
+Suggests:
     dbscan (>= 1.1.11),
     FNN (>= 1.1.3.1),
     testthat (>= 3.0.0),
@@ -46,8 +50,7 @@ Suggests:
     clue,
     viridis,
     ggplot2,
-    covr,
-    clustermq
+    covr
 LinkingTo:
     Rcpp,
     RcppArmadillo
