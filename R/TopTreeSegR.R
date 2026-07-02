@@ -495,7 +495,7 @@ TTS_pipeline <- function(las,
     message("=== TopTreeSegR Pipeline ===\n")
     message("Segmentation:")
     message(sprintf("  Method: %s", method))
-    message(sprintf("  Alpha: %.1f", alpha))
+    message(sprintf("  Alpha: %.2f", alpha))
     message(sprintf("  Stem height: %.1f", stem_height))
     message(sprintf("  Cores: %d", cores))
     
