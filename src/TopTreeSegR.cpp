@@ -516,12 +516,11 @@ private:
 List tree_segment_cpp(DataFrame vertices_df, 
                       List morse_complex_data,
                       double stem_height = 0.5,
-                      double spatial_eps = 1.0,
                       double max_distance = 2.0,
                       double grid_size = 5.0) {
   
   try {
-    TreeSegmenter segmenter(stem_height, spatial_eps, max_distance, grid_size);
+    TreeSegmenter segmenter(stem_height, 1.0, max_distance, grid_size);
     return segmenter.segmentTrees(vertices_df, morse_complex_data);
   } catch (const std::exception& e) {
     Rcpp::stop("Segmentation error: %s", e.what());
@@ -535,7 +534,8 @@ List tree_segment_cpp(DataFrame vertices_df,
 List morse_smale_segment_cpp(DataFrame vertices_df,
                              List morse_complex_data,
                              double stem_height = 0.5,
-                             double spatial_eps = 1.0) {
+                             double density_cell = 1.0,
+                             int density_min = 2) {
   
   try {
     Rcout << "\n=== Morse-Smale Complex Segmentation (Ascending Manifolds) ===\n";
@@ -590,58 +590,122 @@ List morse_smale_segment_cpp(DataFrame vertices_df,
     
     Rcout << "Found " << potential_seeds.size() << " potential seed minima\n";
     
-    // 4. Spatial clustering for seeds
-    std::unordered_map<int, int> seed_to_cluster;
+    // 4. DENSITY-BASED SEED DETECTION (replaces spatial_eps)
     std::vector<int> seeds;
-    int cluster_id = 1;
     
-    for (size_t i = 0; i < potential_seeds.size(); i++) {
-      int seed_i123 = potential_seeds[i];
-      auto it = i123_to_idx.find(seed_i123);
-      if (it == i123_to_idx.end()) continue;
+    if (potential_seeds.empty()) {
+      Rcout << "WARNING: No potential seeds found!\n";
+    } else {
+      // Collect coordinates of potential seeds
+      std::vector<std::pair<double, int>> seed_coords; // (z, i123)
+      std::vector<std::pair<double, double>> seed_xy;  // (x, y) for density
       
-      if (seed_to_cluster.find(seed_i123) == seed_to_cluster.end()) {
-        seed_to_cluster[seed_i123] = cluster_id;
-        int seed_idx = it->second;
+      for (int sid : potential_seeds) {
+        auto it = i123_to_idx.find(sid);
+        if (it != i123_to_idx.end()) {
+          int idx = it->second;
+          seed_coords.push_back({z[idx], sid});
+          seed_xy.push_back({x[idx], y[idx]});
+        }
+      }
+      
+      if (seed_coords.size() < 2) {
+        // Fallback: use all potential seeds as seeds
+        for (const auto& sc : seed_coords) {
+          seeds.push_back(sc.second);
+        }
+        Rcout << "Too few potential seeds, using all " << seeds.size() << "\n";
+      } else {
+        // Find bounds for density grid
+        double min_x = seed_xy[0].first, max_x = seed_xy[0].first;
+        double min_y = seed_xy[0].second, max_y = seed_xy[0].second;
         
-        // Find nearby minima
-        for (size_t j = i + 1; j < potential_seeds.size(); j++) {
-          int other_i123 = potential_seeds[j];
-          auto it_other = i123_to_idx.find(other_i123);
-          if (it_other == i123_to_idx.end()) continue;
+        for (const auto& p : seed_xy) {
+          if (p.first < min_x) min_x = p.first;
+          if (p.first > max_x) max_x = p.first;
+          if (p.second < min_y) min_y = p.second;
+          if (p.second > max_y) max_y = p.second;
+        }
+        
+        // Use density_cell for grid resolution (default 1.0m for mesh minima)
+        double cell_size = density_cell;
+        double offset_x = min_x - cell_size;
+        double offset_y = min_y - cell_size;
+        int grid_x = std::max(1, (int)std::ceil((max_x - min_x + cell_size*2) / cell_size));
+        int grid_y = std::max(1, (int)std::ceil((max_y - min_y + cell_size*2) / cell_size));
+        
+        std::vector<std::vector<int>> density(grid_x, std::vector<int>(grid_y, 0));
+        
+        // Fill density grid with minima coordinates
+        for (const auto& p : seed_xy) {
+          int gx = (int)((p.first - offset_x) / cell_size);
+          int gy = (int)((p.second - offset_y) / cell_size);
+          if (gx >= 0 && gx < grid_x && gy >= 0 && gy < grid_y) {
+            density[gx][gy]++;
+          }
+        }
+        
+        // Find local maxima (density peaks) - these are our seeds
+        std::vector<std::pair<int,int>> local_maxima;
+        
+        for (int i = 1; i < grid_x - 1; i++) {
+          for (int j = 1; j < grid_y - 1; j++) {
+            if (density[i][j] >= density_min) {
+              bool is_max = true;
+              for (int di = -1; di <= 1 && is_max; di++) {
+                for (int dj = -1; dj <= 1 && is_max; dj++) {
+                  if (di == 0 && dj == 0) continue;
+                  if (density[i][j] < density[i+di][j+dj]) {
+                    is_max = false;
+                  }
+                }
+              }
+              if (is_max) {
+                local_maxima.push_back({i, j});
+              }
+            }
+          }
+        }
+        
+        // For each local maximum, find the lowest potential seed in that cell
+        for (const auto& cell : local_maxima) {
+          int gx = cell.first;
+          int gy = cell.second;
           
-          if (seed_to_cluster.find(other_i123) == seed_to_cluster.end()) {
-            int other_idx = it_other->second;
-            double dx = x[seed_idx] - x[other_idx];
-            double dy = y[seed_idx] - y[other_idx];
-            double dist = std::sqrt(dx*dx + dy*dy);
-            
-            if (dist < spatial_eps) {
-              seed_to_cluster[other_i123] = cluster_id;
+          double lowest_z = std::numeric_limits<double>::max();
+          int best_i123 = -1;
+          int count = 0;
+          
+          for (size_t k = 0; k < seed_xy.size(); k++) {
+            int vgx = (int)((seed_xy[k].first - offset_x) / cell_size);
+            int vgy = (int)((seed_xy[k].second - offset_y) / cell_size);
+            if (vgx == gx && vgy == gy) {
+              count++;
+              if (seed_coords[k].first < lowest_z) {
+                lowest_z = seed_coords[k].first;
+                best_i123 = seed_coords[k].second;
+              }
             }
+          }
+          
+          if (best_i123 > 0 && count >= density_min / 2) {
+            seeds.push_back(best_i123);
           }
         }
         
-        // Select lowest minimum in cluster as seed
-        int lowest_i123 = seed_i123;
-        double lowest_z = z[seed_idx];
-        
-        for (const auto& entry : seed_to_cluster) {
-          if (entry.second == cluster_id) {
-            int idx = i123_to_idx[entry.first];
-            if (z[idx] < lowest_z) {
-              lowest_i123 = entry.first;
-              lowest_z = z[idx];
-            }
+        // Fallback: if no seeds found, use all potential seeds
+        if (seeds.empty()) {
+          for (const auto& sc : seed_coords) {
+            seeds.push_back(sc.second);
           }
+          Rcout << "Density detection failed, using all " << seeds.size() << " potential seeds\n";
+        } else {
+          Rcout << "Density-based seed detection: " << seeds.size() 
+                << " seeds from " << local_maxima.size() << " local maxima (cell=" 
+                << cell_size << "m, min=" << density_min << ")\n";
         }
-        
-        seeds.push_back(lowest_i123);
-        cluster_id++;
       }
     }
-    
-    Rcout << "Selected " << seeds.size() << " seed minima after spatial clustering\n";
     
     // 5. Parse gradient field to build flow maps
     CharacterVector vector_field = morse_complex_data["vector_field"];
@@ -1318,7 +1382,6 @@ int changes = 0;
 
 // Pre-compute constants for speed
 const double inv_sqrt_two_pi = 0.3989422804014327; // 1/sqrt(2*pi)
-// const double two_pi = 6.283185307179586;
 
 #pragma omp parallel num_threads(cores) reduction(+:changes)
 {
@@ -1503,4 +1566,3 @@ return List::create(
   _["change_ratio"] = change_ratio
 );
 }
-

@@ -26,32 +26,32 @@ BEGIN_RCPP
 END_RCPP
 }
 // tree_segment_cpp
-List tree_segment_cpp(DataFrame vertices_df, List morse_complex_data, double stem_height, double spatial_eps, double max_distance, double grid_size);
-RcppExport SEXP _TopTreeSegR_tree_segment_cpp(SEXP vertices_dfSEXP, SEXP morse_complex_dataSEXP, SEXP stem_heightSEXP, SEXP spatial_epsSEXP, SEXP max_distanceSEXP, SEXP grid_sizeSEXP) {
+List tree_segment_cpp(DataFrame vertices_df, List morse_complex_data, double stem_height, double max_distance, double grid_size);
+RcppExport SEXP _TopTreeSegR_tree_segment_cpp(SEXP vertices_dfSEXP, SEXP morse_complex_dataSEXP, SEXP stem_heightSEXP, SEXP max_distanceSEXP, SEXP grid_sizeSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< DataFrame >::type vertices_df(vertices_dfSEXP);
     Rcpp::traits::input_parameter< List >::type morse_complex_data(morse_complex_dataSEXP);
     Rcpp::traits::input_parameter< double >::type stem_height(stem_heightSEXP);
-    Rcpp::traits::input_parameter< double >::type spatial_eps(spatial_epsSEXP);
     Rcpp::traits::input_parameter< double >::type max_distance(max_distanceSEXP);
     Rcpp::traits::input_parameter< double >::type grid_size(grid_sizeSEXP);
-    rcpp_result_gen = Rcpp::wrap(tree_segment_cpp(vertices_df, morse_complex_data, stem_height, spatial_eps, max_distance, grid_size));
+    rcpp_result_gen = Rcpp::wrap(tree_segment_cpp(vertices_df, morse_complex_data, stem_height, max_distance, grid_size));
     return rcpp_result_gen;
 END_RCPP
 }
 // morse_smale_segment_cpp
-List morse_smale_segment_cpp(DataFrame vertices_df, List morse_complex_data, double stem_height, double spatial_eps);
-RcppExport SEXP _TopTreeSegR_morse_smale_segment_cpp(SEXP vertices_dfSEXP, SEXP morse_complex_dataSEXP, SEXP stem_heightSEXP, SEXP spatial_epsSEXP) {
+List morse_smale_segment_cpp(DataFrame vertices_df, List morse_complex_data, double stem_height, double density_cell, int density_min);
+RcppExport SEXP _TopTreeSegR_morse_smale_segment_cpp(SEXP vertices_dfSEXP, SEXP morse_complex_dataSEXP, SEXP stem_heightSEXP, SEXP density_cellSEXP, SEXP density_minSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< DataFrame >::type vertices_df(vertices_dfSEXP);
     Rcpp::traits::input_parameter< List >::type morse_complex_data(morse_complex_dataSEXP);
     Rcpp::traits::input_parameter< double >::type stem_height(stem_heightSEXP);
-    Rcpp::traits::input_parameter< double >::type spatial_eps(spatial_epsSEXP);
-    rcpp_result_gen = Rcpp::wrap(morse_smale_segment_cpp(vertices_df, morse_complex_data, stem_height, spatial_eps));
+    Rcpp::traits::input_parameter< double >::type density_cell(density_cellSEXP);
+    Rcpp::traits::input_parameter< int >::type density_min(density_minSEXP);
+    rcpp_result_gen = Rcpp::wrap(morse_smale_segment_cpp(vertices_df, morse_complex_data, stem_height, density_cell, density_min));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -100,8 +100,8 @@ END_RCPP
 
 static const R_CallMethodDef CallEntries[] = {
     {"_TopTreeSegR_map_mesh_to_points_cpp", (DL_FUNC) &_TopTreeSegR_map_mesh_to_points_cpp, 4},
-    {"_TopTreeSegR_tree_segment_cpp", (DL_FUNC) &_TopTreeSegR_tree_segment_cpp, 6},
-    {"_TopTreeSegR_morse_smale_segment_cpp", (DL_FUNC) &_TopTreeSegR_morse_smale_segment_cpp, 4},
+    {"_TopTreeSegR_tree_segment_cpp", (DL_FUNC) &_TopTreeSegR_tree_segment_cpp, 5},
+    {"_TopTreeSegR_morse_smale_segment_cpp", (DL_FUNC) &_TopTreeSegR_morse_smale_segment_cpp, 5},
     {"_TopTreeSegR_get_mesh_coords_cpp", (DL_FUNC) &_TopTreeSegR_get_mesh_coords_cpp, 1},
     {"_TopTreeSegR_MRFBR_cpp", (DL_FUNC) &_TopTreeSegR_MRFBR_cpp, 5},
     {"_TopTreeSegR_BBR_ultrafast_cpp", (DL_FUNC) &_TopTreeSegR_BBR_ultrafast_cpp, 6},

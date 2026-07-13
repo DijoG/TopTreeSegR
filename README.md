@@ -6,17 +6,19 @@
 ![C++](https://img.shields.io/badge/C++-RcppArmadillo-blue?style=for-the-badge&logo=cplusplus)
 ![Development](https://img.shields.io/badge/Development-brightgreen?style=for-the-badge)
 
-**Blazing-fast individual tree segmentation from terrestrial LiDAR point clouds using Discrete Morse Theory with Bayesian refinement achieving >0.85 Adjusted Rand Index (ARI).**
+**Blazing-fast individual tree segmentation from terrestrial LiDAR point clouds using Discrete Morse Theory with density-based seed detection and Bayesian refinement achieving >0.85 Adjusted Rand Index (ARI).**
 
-`TopTreeSegR` combines **Morse-Smale complex analysis** with **Bayesian boundary optimization** to achieve state-of-the-art tree segmentation accuracy. This R package delivers a production-ready pipeline that transforms raw LiDAR points into clean, validated tree segments in under two minutes for a typical plot.
+`TopTreeSegR` combines **Morse-Smale complex analysis** with **density-based seed detection** and **Bayesian boundary optimization** to achieve state-of-the-art tree segmentation accuracy. This R package delivers a production-ready pipeline that transforms raw LiDAR points into clean, validated tree segments in under two minutes for a typical plot.
 
 > **⚠️ Important:** TopTreeSegR segments the **alpha-complex mesh** (Delaunay triangulation), **not** the original raw point cloud. The mesh captures the essential tree structure while reducing point count by ~90% for **ultra-fast processing**.
 
-🎯 Core Features: >0.85 ARI | Single TTS_pipeline() | Bayesian refinement | Full validation suite | Interactive 3D viz
+🎯 Core Features: >0.85 ARI | Single TTS_pipeline() | Density-based seed detection | Bayesian refinement | Full validation suite | Interactive 3D viz
 
-## 🏆 Key Achievement
+## 🏆 Key Achievements
 
-**Proven >0.85 Adjusted Rand Index (ARI)** with the 2-pass Bayesian Boundary Refinement pipeline on benchmark TLS datasets.
+- **Proven >0.85 Adjusted Rand Index (ARI)** with the 2-pass Bayesian Boundary Refinement pipeline on benchmark TLS datasets
+- **Density-based seed detection**: Automatically finds tree trunks
+- **Robust to variable tree spacing**: Works across dense and open forests without parameter adjustment
 
 ## 🚀 Quick Start
 
@@ -49,7 +51,7 @@ trees_filtered <- lidR::add_lasattribute(trees, pid, "pid", "Unique point ID")
 
 # Complete pipeline: segmentation + Bayesian refinement
 result <- TopTreeSegR::TTS_pipeline(
-  las = trees
+  las = trees,
   cores = 20                  
 )
 
@@ -94,6 +96,22 @@ Adj Rand I: 0.8403
 
 ## 🛠️ Advanced Usage
 
+### Density-Based Seed Detection (New!)
+
+TopTreeSegR now uses **density-based seed detection**. This automatically finds tree trunks by detecting local density peaks in the mesh minima, making the method robust to variable tree spacing.
+
+```r
+# Default parameters work across most forests
+result <- TTS_pipeline(
+  las = trees,
+  method = "morse-smale",
+  alpha = 0.1,
+  stem_height = 0.5,
+  density_cell = 1.0,    # Cell size for density grid (m)
+  density_min = 2,       # Minimum minima per cell for seed
+  cores = 16
+)
+```
 ### Complete Pipeline with 2-Pass Bayesian Boundary Refinement (BBR)
 
 ```r
@@ -101,27 +119,29 @@ Adj Rand I: 0.8403
 res <- TTS_pipeline(
   las = trees,
   method = "morse-smale",
-  input_truth = "pid"              # Las attribute of point ids
-  alpha = 0.1,                     # Alpha value for alpha hull 
-  stem_height = 0.5,               # Find seeds below 
-  prior_strength = 1.0,            # Spatial consistency
-  likelihood_strength = 1.6,       # Elevation consistency (key!)
-  confidence_threshold = 1.0,      # 1) Aggressive refinement (conf=1.0)
+  input_truth = "pid",              # default ~ LAS attribute of point IDs
+  alpha = 0.1,                      # default ~ alpha value for alpha hull 
+  stem_height = 0.5,                # default ~  find seeds below this height (m) 
+  density_cell = 1.0,               # default ~ cell size (m) for density grid 
+  density_min = 2,                  # default ~ minimum density for seed 
+  prior_strength = 1.0,             # default ~ spatial consistency 
+  likelihood_strength = 1.6,        # defaul ~, elevation consistency (key!)
+  confidence_threshold = 1.0,       # 1) default ~ aggressive refinement 
   cores = 16,
   fix_fragments = TRUE
 ) # ~2 minutes
 
 validate_TTS(res, trees)  # ARI: 0.8408
 
-# Second BBR pass
+# Second BBR pass (conservative cleanup)
 tictoc::tic()
 res2 <- TTS_BBR(
-  res1,
+  res,
   prior_strength = 1.0,
   likelihood_strength = 1.6,
-  confidence_threshold = 1.9,      # 2) Conservative cleanup, conf=1.9 ~ only very (> 0.9) probable improvements
+  confidence_threshold = 1.9,       # 2) Only very probable improvements
   cores = 16) 
-tictoc::toc()# ~83 seconds
+tictoc::toc() # ~83 seconds
 
 validate_TTS(res2, trees) # ARI: 0.8501
 ```
@@ -172,10 +192,11 @@ RAW POINTS → ALPHA-COMPLEX → MORSE COMPLEX → SEGMENTATION → BAYESIAN REF
     - Each minimum's ascending manifold = influence region of a tree
     - Points flow downhill to their corresponding trunk minimum
 
-🔍 5. Seed Detection & Initial Segmentation
-    - Cluster low minima near ground as tree trunks
-    - Assign each mesh vertex to the trunk whose ascending manifold it belongs to
-    - Create initial tree segments based on gradient flow structure
+🔍 5. Density-Based Seed Detection 
+    - Find local density peaks among minima near ground
+    - Automatically adapts to tree spacing 
+    - Filters out noise minima (low density)
+    - Creates one seed per tree trunk
 
 🧠 6. Bayesian Boundary Refinement (Key Innovation!)
     - Identify boundary points between trees
@@ -190,18 +211,39 @@ RAW POINTS → ALPHA-COMPLEX → MORSE COMPLEX → SEGMENTATION → BAYESIAN REF
     - Bayesian refinement improves boundary accuracy
     - Clean individual tree segments (mesh vertices labeled)
 ```
+
+## 📊 Parameters
+
+### Seed Detection Parameters
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `stem_height` | 0.5 | Max height for minima to be considered seeds (m) |
+| `density_cell` | 1.0 | Cell size for density grid (m) |
+| `density_min` | 2 | Minimum number of minima per cell for a seed |
+
+### Bayesian Refinement Parameters
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `prior_strength` | 1.0 | Spatial consistency strength (0.5-2.0) |
+| `likelihood_strength` | 1.6 | Elevation consistency exponent (1.0-2.5) |
+| `confidence_threshold` | 1.0 | How much better new label must be (1.0-2.0) |
+
 ## Key Features
 
 ```text
 ⚡ Ultra-Fast: RcppArmadillo + OpenMP parallel processing
 🧠 Bayesian-Optimized: Elevation-consistent boundary refinement (>0.85 ARI)
 🎯 Topology-Based: Morse-Smale complex analysis for robust segmentation
+📐 Density-Based Seeds: Automatic seed detection 
 🌳 Structure-Aware: Leverages tree height coherence for accurate boundaries
-📊 Validation-Ready: Built-in ARI, accuracs, precision, recall, F1-score metrics
+📊 Validation-Ready: Built-in ARI, precision, recall, F1-score metrics
 🔍 Uncertainty-Aware: Bayesian framework quantifies segmentation confidence
 🚀 Production-Ready: Single TTS_pipeline() function for end-to-end workflow
 📈 Benchmark-Proven: Validated on TLS datasets with ground truth
 ```
+
 ## Mathematical Foundation
 
 ```text
@@ -209,6 +251,7 @@ RAW POINTS → ALPHA-COMPLEX → MORSE COMPLEX → SEGMENTATION → BAYESIAN REF
 - Morse-Smale Complex: Partition of space into ascending/descending manifolds from critical points
 - Alpha Complex: Topologically correct subset of Delaunay triangulation for point cloud simplification
 - Forman Gradient: Discrete vector field representing flow direction on the mesh
+- Density-Based Clustering: Local maxima detection for robust seed identification
 - Bayesian Inference: Posterior = Prior × Likelihood, with MAP estimation for optimal labeling
 - Gaussian Likelihood: Models elevation consistency within each tree segment
 - Markovian Prior: Captures spatial coherence through neighborhood relationships

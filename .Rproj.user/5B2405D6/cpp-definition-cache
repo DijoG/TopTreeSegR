@@ -1,7 +1,7 @@
 [
     {
         "file": "D://TopTreeSegR/src/TopTreeSegR.cpp",
-        "file_last_write": 1782849511.0,
+        "file_last_write": 1783951781.0,
         "definitions": [
             {
                 "usr": "c:@S@Point3D",
@@ -154,22 +154,22 @@
                 "hidden": false
             },
             {
-                "usr": "c:@F@tree_segment_cpp#$@N@Rcpp@S@DataFrame_Impl>#@N@Rcpp@ST>1#T@PreserveStorage#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#d#d#d#d#",
+                "usr": "c:@F@tree_segment_cpp#$@N@Rcpp@S@DataFrame_Impl>#@N@Rcpp@ST>1#T@PreserveStorage#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#d#d#d#",
                 "kind": 6,
                 "parent_name": "",
-                "name": "tree_segment_cpp(Rcpp::DataFrame, Rcpp::List, double, double, double, double)",
+                "name": "tree_segment_cpp(Rcpp::DataFrame, Rcpp::List, double, double, double)",
                 "file": "D://TopTreeSegR/src/TopTreeSegR.cpp",
                 "line": 516,
                 "column": 6,
                 "hidden": false
             },
             {
-                "usr": "c:@F@morse_smale_segment_cpp#$@N@Rcpp@S@DataFrame_Impl>#@N@Rcpp@ST>1#T@PreserveStorage#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#d#d#",
+                "usr": "c:@F@morse_smale_segment_cpp#$@N@Rcpp@S@DataFrame_Impl>#@N@Rcpp@ST>1#T@PreserveStorage#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#d#d#I#",
                 "kind": 6,
                 "parent_name": "",
-                "name": "morse_smale_segment_cpp(Rcpp::DataFrame, Rcpp::List, double, double)",
+                "name": "morse_smale_segment_cpp(Rcpp::DataFrame, Rcpp::List, double, double, int)",
                 "file": "D://TopTreeSegR/src/TopTreeSegR.cpp",
-                "line": 535,
+                "line": 534,
                 "column": 6,
                 "hidden": false
             },
@@ -179,7 +179,7 @@
                 "parent_name": "",
                 "name": "get_mesh_coords_cpp(Rcpp::DataFrame)",
                 "file": "D://TopTreeSegR/src/TopTreeSegR.cpp",
-                "line": 879,
+                "line": 943,
                 "column": 11,
                 "hidden": false
             },
@@ -189,7 +189,7 @@
                 "parent_name": "",
                 "name": "MRFBR_cpp(const arma::mat &, const Rcpp::IntegerVector &, double, double, int)",
                 "file": "D://TopTreeSegR/src/TopTreeSegR.cpp",
-                "line": 896,
+                "line": 960,
                 "column": 15,
                 "hidden": false
             },
@@ -199,7 +199,7 @@
                 "parent_name": "",
                 "name": "BBR_ultrafast_cpp(const arma::mat &, const Rcpp::IntegerVector &, double, double, double, int)",
                 "file": "D://TopTreeSegR/src/TopTreeSegR.cpp",
-                "line": 1070,
+                "line": 1134,
                 "column": 6,
                 "hidden": false
             }

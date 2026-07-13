@@ -9,9 +9,10 @@ TTS_segmentation(
   alpha = 0.1,
   input_truth = "pid",
   stem_height = 0.5,
+  density_cell = 1,
+  density_min = 2,
   max_distance = 2,
   grid_size = 5,
-  spatial_eps = 1,
   method = "morse-smale",
   cores = 2
 )
@@ -25,11 +26,13 @@ TTS_segmentation(
 
 \item{stem_height}{Height threshold for detecting stem seeds (default: 0.5)}
 
+\item{density_cell}{Cell size for density-based seed detection (default: 1.0)}
+
+\item{density_min}{Minimum density for a seed (default: 2)}
+
 \item{max_distance}{Maximum distance for minima connectivity (default: 2.0)}
 
 \item{grid_size}{Grid size for spatial hashing in large datasets (default: 5.0)}
-
-\item{spatial_eps}{Spatial epsilon for clustering (default: 1.0)}
 
 \item{method}{Segmentation method: "morse-smale" (default) or "gradient"}
 

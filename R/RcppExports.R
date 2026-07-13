@@ -5,12 +5,12 @@ map_mesh_to_points_cpp <- function(mesh_coords, mesh_labels, point_coords, max_d
     .Call(`_TopTreeSegR_map_mesh_to_points_cpp`, mesh_coords, mesh_labels, point_coords, max_distance)
 }
 
-tree_segment_cpp <- function(vertices_df, morse_complex_data, stem_height = 0.5, spatial_eps = 1.0, max_distance = 2.0, grid_size = 5.0) {
-    .Call(`_TopTreeSegR_tree_segment_cpp`, vertices_df, morse_complex_data, stem_height, spatial_eps, max_distance, grid_size)
+tree_segment_cpp <- function(vertices_df, morse_complex_data, stem_height = 0.5, max_distance = 2.0, grid_size = 5.0) {
+    .Call(`_TopTreeSegR_tree_segment_cpp`, vertices_df, morse_complex_data, stem_height, max_distance, grid_size)
 }
 
-morse_smale_segment_cpp <- function(vertices_df, morse_complex_data, stem_height = 0.5, spatial_eps = 1.0) {
-    .Call(`_TopTreeSegR_morse_smale_segment_cpp`, vertices_df, morse_complex_data, stem_height, spatial_eps)
+morse_smale_segment_cpp <- function(vertices_df, morse_complex_data, stem_height = 0.5, density_cell = 1.0, density_min = 2L) {
+    .Call(`_TopTreeSegR_morse_smale_segment_cpp`, vertices_df, morse_complex_data, stem_height, density_cell, density_min)
 }
 
 get_mesh_coords_cpp <- function(vertices_df) {

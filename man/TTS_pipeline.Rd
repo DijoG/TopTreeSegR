@@ -10,7 +10,8 @@ TTS_pipeline(
   alpha = 0.1,
   input_truth = "pid",
   stem_height = 0.5,
-  spatial_eps = 1,
+  density_cell = 1,
+  density_min = 2,
   cores = 2,
   prior_strength = 1,
   likelihood_strength = 1.6,
@@ -29,7 +30,9 @@ TTS_pipeline(
 
 \item{stem_height}{Height threshold for detecting stem seeds (default: 0.5)}
 
-\item{spatial_eps}{Spatial epsilon for clustering minima (default: 1.0)}
+\item{density_cell}{Cell size for density-based seed detection (default: 1.0)}
+
+\item{density_min}{Minimum density for a seed (default: 2)}
 
 \item{cores}{Number of CPU threads for parallel processing (default: 2)}
 
@@ -76,12 +79,11 @@ using optimized parameters proven to achieve >0.85 Adjusted Rand Index.
 # Simplest usage with defaults (proven to achieve >0.85 ARI)
 result <- TTS_pipeline(las = my_las_data)
 
-# With custom Bayesian parameters
+# With custom density parameters for dense forests
 result <- TTS_pipeline(
   las = my_las_data,
-  prior_strength = 1.0,       # Moderate spatial consistency
-  likelihood_strength = 1.6,   # Strong elevation consistency
-  confidence_threshold = 1.0   # Aggressive refinement
+  density_cell = 1.0,    # Cell size for density grid
+  density_min = 2        # Minimum density for seed
 )
 
 # Validate results (if ground truth available)

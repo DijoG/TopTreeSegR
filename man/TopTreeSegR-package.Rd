@@ -27,6 +27,7 @@ TopTreeSegR implements advanced topological methods for tree segmentation:
 \itemize{
 \item C++-accelerated Morse-Smale complex computation
 \item Bayesian boundary refinement with spatial and elevation consistency
+\item \strong{Density-based seed detection} (no spatial_eps tuning required!)
 \item Optimized parameters for >0.85 Adjusted Rand Index
 \item Parallel processing for large datasets
 \item 3D visualization and validation tools

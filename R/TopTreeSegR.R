@@ -19,6 +19,7 @@
 #' **Key Features:**
 #' - C++-accelerated Morse-Smale complex computation
 #' - Bayesian boundary refinement with spatial and elevation consistency
+#' - **Density-based seed detection** (no spatial_eps tuning required!)
 #' - Optimized parameters for >0.85 Adjusted Rand Index
 #' - Parallel processing for large datasets
 #' - 3D visualization and validation tools
@@ -41,7 +42,7 @@ NULL
 .onAttach <- function(libname, pkgname) {
   packageStartupMessage(
     "=== TopTreeSegR loaded! ===\n",
-    "C++ accelerated tree segmentation with gradient flow\n",
+    "C++ accelerated tree segmentation with density-based seed detection\n",
     "Use TTS_pipeline() for complete segmentation workflow"
   )
 }
@@ -70,9 +71,10 @@ NULL
 #' @param alpha Alpha parameter for alpha-complex construction (default: 0.1)
 #' @param input_truth Point ID attribute from las, if not found generated (default: "pid")
 #' @param stem_height Height threshold for detecting stem seeds (default: 0.5)
+#' @param density_cell Cell size for density-based seed detection (default: 1.0)
+#' @param density_min Minimum density for a seed (default: 2)
 #' @param max_distance Maximum distance for minima connectivity (default: 2.0)
 #' @param grid_size Grid size for spatial hashing in large datasets (default: 5.0)
-#' @param spatial_eps Spatial epsilon for clustering (default: 1.0)
 #' @param method Segmentation method: "morse-smale" (default) or "gradient"
 #' @param cores Number of CPU threads for parallel processing (default: 2)
 #' 
@@ -94,9 +96,10 @@ TTS_segmentation <- function(las,
                              alpha = 0.1, 
                              input_truth = "pid",
                              stem_height = 0.5,
+                             density_cell = 1.0,
+                             density_min = 2,
                              max_distance = 2.0,
                              grid_size = 5.0,
-                             spatial_eps = 1.0,
                              method = "morse-smale",
                              cores = 2) {
   
@@ -172,7 +175,8 @@ TTS_segmentation <- function(las,
       vertices_df = vertices_df,
       morse_complex_data = morse_complex,
       stem_height = stem_height,
-      spatial_eps = spatial_eps
+      density_cell = density_cell,
+      density_min = density_min
     )
     
   } else if (method == "gradient") {
@@ -180,7 +184,6 @@ TTS_segmentation <- function(las,
       vertices_df = vertices_df,
       morse_complex_data = morse_complex,
       stem_height = stem_height,
-      spatial_eps = spatial_eps,
       max_distance = max_distance,
       grid_size = grid_size
     )
@@ -226,6 +229,11 @@ TTS_segmentation <- function(las,
   message("Method: ", result$method)
   message("Detected ", result$n_trees, " trees")
   
+  if (method == "morse-smale") {
+    message("Seed detection: density-based (cell=", density_cell, 
+            "m, min=", density_min, ")")
+  }
+  
   if (length(result$mesh_labels) > 0) {
     valid_labels = result$mesh_labels[result$mesh_labels > 0]
     if (length(valid_labels) > 0) {
@@ -258,8 +266,9 @@ TTS_segmentation <- function(las,
     parameters = list(
       alpha = alpha,
       stem_height = stem_height,
+      density_cell = density_cell,
+      density_min = density_min,
       max_distance = max_distance,
-      spatial_eps = spatial_eps,
       grid_size = grid_size,
       cores = cores
     )
@@ -313,7 +322,7 @@ TTS_MRFBR <- function(TTS_result,
     spatial_sigma = spatial_sigma,
     intensity = intensity,
     iterations = iterations)
-
+  
   elapsed = difftime(Sys.time(), start_time, units = "secs")
   
   # Update result
@@ -422,7 +431,8 @@ TTS_BBR <- function(TTS_result,
 #' @param alpha Alpha parameter for alpha-complex construction (default: 0.1)
 #' @param input_truth Point ID attribute from las (default: "pid")
 #' @param stem_height Height threshold for detecting stem seeds (default: 0.5)
-#' @param spatial_eps Spatial epsilon for clustering minima (default: 1.0)
+#' @param density_cell Cell size for density-based seed detection (default: 1.0)
+#' @param density_min Minimum density for a seed (default: 2)
 #' @param cores Number of CPU threads for parallel processing (default: 2)
 #' 
 #' @param prior_strength Spatial consistency strength in Bayesian refinement.
@@ -461,12 +471,11 @@ TTS_BBR <- function(TTS_result,
 #' # Simplest usage with defaults (proven to achieve >0.85 ARI)
 #' result <- TTS_pipeline(las = my_las_data)
 #'
-#' # With custom Bayesian parameters
+#' # With custom density parameters for dense forests
 #' result <- TTS_pipeline(
 #'   las = my_las_data,
-#'   prior_strength = 1.0,       # Moderate spatial consistency
-#'   likelihood_strength = 1.6,   # Strong elevation consistency
-#'   confidence_threshold = 1.0   # Aggressive refinement
+#'   density_cell = 1.0,    # Cell size for density grid
+#'   density_min = 2        # Minimum density for seed
 #' )
 #'
 #' # Validate results (if ground truth available)
@@ -484,7 +493,8 @@ TTS_pipeline <- function(las,
                          alpha = 0.1,
                          input_truth = "pid",
                          stem_height = 0.5,
-                         spatial_eps = 1.0,
+                         density_cell = 1.0,
+                         density_min = 2,
                          cores = 2,
                          prior_strength = 1.0,
                          likelihood_strength = 1.6,
@@ -498,6 +508,12 @@ TTS_pipeline <- function(las,
     message(sprintf("  Alpha: %.2f", alpha))
     message(sprintf("  Stem height: %.1f", stem_height))
     message(sprintf("  Cores: %d", cores))
+    
+    if (method == "morse-smale") {
+      message("  Seed detection: density-based")
+      message(sprintf("    Cell size: %.1fm", density_cell))
+      message(sprintf("    Min density: %d", density_min))
+    }
     
     message("\nBayesian Refinement:")
     message(sprintf("  Prior strength: %.1f (spatial consistency)", prior_strength))
@@ -519,7 +535,8 @@ TTS_pipeline <- function(las,
     alpha = alpha,
     input_truth = input_truth,
     stem_height = stem_height,
-    spatial_eps = spatial_eps,
+    density_cell = density_cell,
+    density_min = density_min,
     method = method,
     cores = cores
   )
@@ -545,7 +562,15 @@ TTS_pipeline <- function(las,
     segmentation_method = method,
     alpha = alpha,
     stem_height = stem_height,
-    spatial_eps = spatial_eps,
+    seed_detection = if(method == "morse-smale") {
+      list(
+        method = "density-based",
+        density_cell = density_cell,
+        density_min = density_min
+      )
+    } else {
+      list(method = "Morse-Smale minima")
+    },
     refinement = "bayesian",
     refinement_params = list(
       prior_strength = prior_strength,
@@ -591,6 +616,17 @@ print.TTS_pipeline_result <- function(x, ...) {
   cat(sprintf("%-25s: %d\n", "Mesh vertices", nrow(x$mesh_coords)))
   
   if (!is.null(x$pipeline)) {
+    cat("\nSeed Detection:\n")
+    if (x$method == "morse-smale" && !is.null(x$pipeline$seed_detection$method)) {
+      cat(sprintf("  %-22s: %s\n", "Method", x$pipeline$seed_detection$method))
+      cat(sprintf("  %-22s: %.1fm\n", "Cell size", 
+                  x$pipeline$seed_detection$density_cell))
+      cat(sprintf("  %-22s: %d\n", "Min density", 
+                  x$pipeline$seed_detection$density_min))
+    } else {
+      cat(sprintf("  %-22s: %s\n", "Method", "Morse-Smale minima"))
+    }
+    
     cat("\nRefinement Parameters:\n")
     cat(sprintf("  %-22s: %.1f\n", "Prior strength", 
                 x$pipeline$refinement_params$prior_strength))
@@ -671,7 +707,8 @@ print.TTS_result <- function(x, ...) {
   cat("\nParameters:\n")
   cat(sprintf("  alpha: %.2f\n", x$parameters$alpha))
   cat(sprintf("  stem_height: %.2f\n", x$parameters$stem_height))
-  cat(sprintf("  spatial_eps: %.2f\n", x$parameters$spatial_eps))
+  cat(sprintf("  density_cell: %.2f\n", x$parameters$density_cell))
+  cat(sprintf("  density_min: %d\n", x$parameters$density_min))
   cat(sprintf("  max_distance: %.2f\n", x$parameters$max_distance))
   
   invisible(x)
@@ -1115,15 +1152,18 @@ map_mesh_to_points_cpp <- function(mesh_coords, mesh_labels, point_coords,
 
 #' @noRd
 morse_smale_segment_cpp <- function(vertices_df, morse_complex_data, 
-                                    stem_height = 0.5, spatial_eps = 1.0) {
+                                    stem_height = 0.5, 
+                                    density_cell = 1.0,
+                                    density_min = 2) {
   .Call(`_TopTreeSegR_morse_smale_segment_cpp`, vertices_df, morse_complex_data, 
-        stem_height, spatial_eps)
+        stem_height, density_cell, density_min)
 }
 
 #' @noRd
 tree_segment_cpp <- function(vertices_df, morse_complex_data, 
-                             stem_height = 0.5, spatial_eps = 1.0,
-                             max_distance = 2.0, grid_size = 5.0) {
+                             stem_height = 0.5,
+                             max_distance = 2.0, 
+                             grid_size = 5.0) {
   .Call(`_TopTreeSegR_tree_segment_cpp`, vertices_df, morse_complex_data, 
-        stem_height, spatial_eps, max_distance, grid_size)
+        stem_height, max_distance, grid_size)
 }
