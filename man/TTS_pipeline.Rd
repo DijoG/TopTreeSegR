@@ -25,7 +25,7 @@ TTS_pipeline(
 
 \item{alpha}{Alpha parameter for alpha-complex construction (default: 0.1)}
 
-\item{input_truth}{Attribute from las (default: "pid")}
+\item{input_truth}{Point ID attribute from las (default: "pid")}
 
 \item{stem_height}{Height threshold for detecting stem seeds (default: 0.5)}
 

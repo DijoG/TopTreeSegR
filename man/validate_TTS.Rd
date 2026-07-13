@@ -4,14 +4,22 @@
 \alias{validate_TTS}
 \title{Validate TTS Segmentation Results}
 \usage{
-validate_TTS(TTS_result, lasdf, val_col = "treeid", auto_align = TRUE)
+validate_TTS(
+  TTS_result,
+  lasdf,
+  val_col = "treeid",
+  input_truth = "pid",
+  auto_align = TRUE
+)
 }
 \arguments{
 \item{TTS_result}{Result from TTS_segmentation() with $labels and $original_pid}
 
 \item{lasdf}{Original LAS object with ground truth}
 
-\item{val_col}{Column in LAS with ground truth labels (default: 'treeid')}
+\item{val_col}{Column in LAS with ground truth labels (default: "treeid")}
+
+\item{input_truth}{Point ID attribute from las (default: "pid")}
 
 \item{auto_align}{Label (true and pridicted) alighment (default: TRUE)}
 }

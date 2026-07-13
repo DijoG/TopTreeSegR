@@ -420,7 +420,7 @@ TTS_BBR <- function(TTS_result,
 #' @param las Input LAS point cloud (must contain X, Y, Z coordinates)
 #' @param method Segmentation method: "morse-smale" (default) or "gradient"
 #' @param alpha Alpha parameter for alpha-complex construction (default: 0.1)
-#' @param input_truth Attribute from las (default: "pid")
+#' @param input_truth Point ID attribute from las (default: "pid")
 #' @param stem_height Height threshold for detecting stem seeds (default: 0.5)
 #' @param spatial_eps Spatial epsilon for clustering minima (default: 1.0)
 #' @param cores Number of CPU threads for parallel processing (default: 2)
@@ -890,12 +890,13 @@ plot_TTS_2d <- function(TTS_result, projection = "xy", point_size = 0.5,
 #'
 #' @param TTS_result Result from TTS_segmentation() with $labels and $original_pid
 #' @param lasdf Original LAS object with ground truth
-#' @param val_col Column in LAS with ground truth labels (default: 'treeid')
+#' @param val_col Column in LAS (lasdf) with ground truth labels (default: "treeid")
+#' @param input_truth Point ID attribute from LAS (lasdf) (default: "pid")
 #' @param auto_align Label (true and pridicted) alighment (default: TRUE) 
 #'
 #' @return Validation metrics
 #' @export
-validate_TTS = function(TTS_result, lasdf, val_col = "treeid", auto_align = TRUE) {
+validate_TTS = function(TTS_result, lasdf, val_col = "treeid", input_truth = "pid", auto_align = TRUE) {
   
   message("=== TTS Segmentation Validation ===\n")
   
@@ -925,7 +926,7 @@ validate_TTS = function(TTS_result, lasdf, val_col = "treeid", auto_align = TRUE
   # Create truth table
   las_data = lasdf@data
   truth_table = data.frame(
-    pid = las_data$pid,
+    pid = las_data[[input_truth]],
     truth = las_data[[val_col]]
   )
   
