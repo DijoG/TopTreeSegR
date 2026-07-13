@@ -892,7 +892,7 @@ plot_TTS_2d <- function(TTS_result, projection = "xy", point_size = 0.5,
 #' @param lasdf Original LAS object with ground truth
 #' @param val_col Column in LAS (lasdf) with ground truth labels (default: "treeid")
 #' @param input_truth Point ID attribute from LAS (lasdf) (default: "pid")
-#' @param auto_align Label (true and pridicted) alighment (default: TRUE) 
+#' @param auto_align Label (true and predicted) alignment (default: TRUE) 
 #'
 #' @return Validation metrics
 #' @export
@@ -909,8 +909,8 @@ validate_TTS = function(TTS_result, lasdf, val_col = "treeid", input_truth = "pi
     stop("TTS_result must contain both 'labels' and 'original_pid' elements")
   }
   
-  if (!"pid" %in% names(lasdf@data)) {
-    stop("LAS data must contain 'pid' column")
+  if (!input_truth %in% names(lasdf@data)) {
+    stop(sprintf("LAS data must contain '%s' column", input_truth))
   }
   
   if (!val_col %in% names(lasdf@data)) {

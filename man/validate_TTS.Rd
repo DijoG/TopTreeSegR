@@ -21,7 +21,7 @@ validate_TTS(
 
 \item{input_truth}{Point ID attribute from LAS (lasdf) (default: "pid")}
 
-\item{auto_align}{Label (true and pridicted) alighment (default: TRUE)}
+\item{auto_align}{Label (true and predicted) alignment (default: TRUE)}
 }
 \value{
 Validation metrics
