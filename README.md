@@ -72,9 +72,8 @@ TopTreeSegR::validate_TTS(result, trees)
 ```r
 # Complete pipeline benchmark
 tictoc::tic()
-result <- TTS_pipeline(trees, cores = 8)
-tictoc::toc()
-# 118.68 seconds (~2 minutes)
+result <- TTS_pipeline(trees, cores = 16)
+tictoc::toc() # ~ 77 seconds
 
 validate_TTS(result, trees)
 ```
@@ -86,12 +85,12 @@ Points: 232420 | Pred trees: 5 | True trees: 5
 Match rate: 100.0%
 
 === METRICS ===
-Precision:  0.9051
-Recall:     0.9051
-F1-Score:   0.9051
-Accuracy:   0.9051
-Rand Index: 0.9416
-Adj Rand I: 0.8403
+Precision:  0.9091
+Recall:     0.9091
+F1-Score:   0.9091
+Accuracy:   0.9091
+Rand Index: 0.9415
+Adj Rand I: 0.8416
 ```
 
 ## 🛠️ Advanced Usage
@@ -116,6 +115,7 @@ result <- TTS_pipeline(
 
 ```r
 # TTS_pipeline includes the first BBR pass
+tictoc::tic()
 res <- TTS_pipeline(
   las = trees,
   method = "morse-smale",
@@ -128,10 +128,10 @@ res <- TTS_pipeline(
   likelihood_strength = 1.6,        # defaul ~, elevation consistency (key!)
   confidence_threshold = 1.0,       # 1) default ~ aggressive refinement 
   cores = 16,
-  fix_fragments = TRUE
-) # ~2 minutes
+  fix_fragments = TRUE)
+tictoc::tic() # ~77 seconds
 
-validate_TTS(res, trees)  # ARI: 0.8408
+validate_TTS(res, trees)  # ARI: 0.8416
 
 # Second BBR pass (conservative cleanup)
 tictoc::tic()
@@ -141,9 +141,9 @@ res2 <- TTS_BBR(
   likelihood_strength = 1.6,
   confidence_threshold = 1.9,       # 2) Only very probable improvements
   cores = 16) 
-tictoc::toc() # ~83 seconds
+tictoc::toc() # ~10 seconds
 
-validate_TTS(res2, trees) # ARI: 0.8501
+validate_TTS(res2, trees) # ARI: 0.8508
 ```
 
 ### Results
