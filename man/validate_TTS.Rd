@@ -17,9 +17,9 @@ validate_TTS(
 
 \item{lasdf}{Original LAS object with ground truth}
 
-\item{val_col}{Column in LAS with ground truth labels (default: "treeid")}
+\item{val_col}{Column in LAS (lasdf) with ground truth labels (default: "treeid")}
 
-\item{input_truth}{Point ID attribute from las (default: "pid")}
+\item{input_truth}{Point ID attribute from LAS (lasdf) (default: "pid")}
 
 \item{auto_align}{Label (true and pridicted) alighment (default: TRUE)}
 }
