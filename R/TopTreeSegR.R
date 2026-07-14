@@ -155,102 +155,133 @@ TTS_segmentation <- function(las,
   
   # Step 2: Get mesh components
   if (plotwise) {
-    # Process ALL components
+    # Process ALL components with intelligent filtering
     message("2. Getting all connected components...")
     mesh_list = DiscreteMorseR::get_CCMESH(a, select_largest = FALSE)
+    message("  Found ", length(mesh_list), " total components")
     
-    # Filter out tiny components (noise)
-    min_vertices = 50
-    mesh_list = mesh_list[sapply(mesh_list, function(m) nrow(m$vertices) >= min_vertices)]
-    message("  Found ", length(mesh_list), " valid components (>= ", min_vertices, " vertices)")
-    
-    if (length(mesh_list) == 0) {
-      stop("No valid components found!")
-    }
-    
-    # Process each component
-    all_results = list()
+    # ---- INTELLIGENT FILTERING: Only keep components with minima below stem_height ----
+    mesh_list_filtered = list()
     
     for (i in seq_along(mesh_list)) {
       mesh = mesh_list[[i]]
-      message(sprintf("  Processing component %d/%d (%d vertices)...", 
-                      i, length(mesh_list), nrow(mesh$vertices)))
+      vertices = mesh$vertices
       
-      # Compute Morse complex for this component
-      morse_complex = DiscreteMorseR::compute_MORSE_complex(
-        mesh, 
-        output_dir = NULL, 
-        cores = cores
-      )
-      
-      # Fix Z column if it's character
-      vertices_df = morse_complex$simplices$vertices
-      
-      if (is.character(vertices_df$Z)) {
-        vertices_df$Z = as.numeric(vertices_df$Z)
-      }
-      
-      vertices_df$X = as.numeric(vertices_df$X)
-      vertices_df$Y = as.numeric(vertices_df$Y)
-      vertices_df$Z = as.numeric(vertices_df$Z)
-      vertices_df$i123 = as.integer(vertices_df$i123)
-      
-      # Segment this component
-      if (method == "morse-smale") {
-        result = morse_smale_segment_cpp(
-          vertices_df = vertices_df,
-          morse_complex_data = morse_complex,
-          stem_height = stem_height,
-          density_cell = density_cell,
-          density_min = density_min
-        )
-      } else if (method == "gradient") {
-        result = tree_segment_cpp(
-          vertices_df = vertices_df,
-          morse_complex_data = morse_complex,
-          stem_height = stem_height,
-          max_distance = max_distance,
-          grid_size = grid_size
-        )
+      # Check if any vertex is below stem_height (potential trunk)
+      if (any(vertices[, 3] < stem_height)) {
+        mesh_list_filtered = c(mesh_list_filtered, list(mesh))
       } else {
-        stop("method must be 'morse-smale' or 'gradient'")
+        message(sprintf("  Skipping component %d: no minima below stem_height (%.2fm)", 
+                        i, stem_height))
       }
-      
-      all_results[[i]] = result
     }
     
-    # Combine results from all components
-    message("3. Merging results from all components...")
+    mesh_list = mesh_list_filtered
+    message("  Keeping ", length(mesh_list), " components with potential trunks")
     
-    combined_labels = unlist(lapply(all_results, function(x) x$mesh_labels))
-    combined_coords = do.call(rbind, lapply(all_results, function(x) x$mesh_coords))
-    combined_seeds = unlist(lapply(all_results, function(x) x$seeds))
-    combined_minima = unlist(lapply(all_results, function(x) x$minima))
-    
-    labeled_count = sum(sapply(all_results, function(x) x$labeled_via_msmale))
-    spatially_assigned = sum(sapply(all_results, function(x) x$spatially_assigned))
-    
-    # Create merged result
-    result = list(
-      mesh_labels = combined_labels,
-      mesh_coords = combined_coords,
-      seeds = combined_seeds,
-      minima = combined_minima,
-      n_trees = length(unique(combined_labels[combined_labels > 0])),
-      method = "morse_smale",
-      labeled_via_msmale = labeled_count,
-      spatially_assigned = spatially_assigned,
-      ascending_regions = integer(0),
-      n_components = length(all_results)
-    )
-    
-    message("  Total trees: ", result$n_trees)
-    message("  Components: ", result$n_components)
-    
-  } else {
+    if (length(mesh_list) == 0) {
+      warning("No components with potential trunks found! Falling back to single component.")
+      # Fallback: process the largest component
+      mesh = DiscreteMorseR::get_CCMESH(a, select_largest = TRUE)
+      plotwise = FALSE  # Reset to single component mode for the rest
+      # Continue with single component logic below
+    } else {
+      # Process each kept component
+      all_results = list()
+      
+      for (i in seq_along(mesh_list)) {
+        mesh = mesh_list[[i]]
+        message(sprintf("  Processing component %d/%d (%d vertices)...", 
+                        i, length(mesh_list), nrow(mesh$vertices)))
+        
+        # Compute Morse complex for this component
+        morse_complex = DiscreteMorseR::compute_MORSE_complex(
+          mesh, 
+          output_dir = NULL, 
+          cores = cores
+        )
+        
+        # Fix Z column if it's character
+        vertices_df = morse_complex$simplices$vertices
+        
+        if (is.character(vertices_df$Z)) {
+          vertices_df$Z = as.numeric(vertices_df$Z)
+        }
+        
+        vertices_df$X = as.numeric(vertices_df$X)
+        vertices_df$Y = as.numeric(vertices_df$Y)
+        vertices_df$Z = as.numeric(vertices_df$Z)
+        vertices_df$i123 = as.integer(vertices_df$i123)
+        
+        # Segment this component
+        if (method == "morse-smale") {
+          result = morse_smale_segment_cpp(
+            vertices_df = vertices_df,
+            morse_complex_data = morse_complex,
+            stem_height = stem_height,
+            density_cell = density_cell,
+            density_min = density_min
+          )
+        } else if (method == "gradient") {
+          result = tree_segment_cpp(
+            vertices_df = vertices_df,
+            morse_complex_data = morse_complex,
+            stem_height = stem_height,
+            max_distance = max_distance,
+            grid_size = grid_size
+          )
+        } else {
+          stop("method must be 'morse-smale' or 'gradient'")
+        }
+        
+        all_results[[i]] = result
+      }
+      
+      # Check if we have any results
+      if (length(all_results) == 0) {
+        stop("No components could be processed successfully!")
+      }
+      
+      # Combine results from all components
+      message("3. Merging results from all components...")
+      
+      combined_labels = unlist(lapply(all_results, function(x) x$mesh_labels))
+      combined_coords = do.call(rbind, lapply(all_results, function(x) x$mesh_coords))
+      combined_seeds = unlist(lapply(all_results, function(x) x$seeds))
+      combined_minima = unlist(lapply(all_results, function(x) x$minima))
+      
+      labeled_count = sum(sapply(all_results, function(x) x$labeled_via_msmale))
+      spatially_assigned = sum(sapply(all_results, function(x) x$spatially_assigned))
+      
+      # Create merged result
+      result = list(
+        mesh_labels = combined_labels,
+        mesh_coords = combined_coords,
+        seeds = combined_seeds,
+        minima = combined_minima,
+        n_trees = length(unique(combined_labels[combined_labels > 0])),
+        method = "morse_smale",
+        labeled_via_msmale = labeled_count,
+        spatially_assigned = spatially_assigned,
+        ascending_regions = integer(0),
+        n_components = length(all_results)
+      )
+      
+      message("  Total trees: ", result$n_trees)
+      message("  Components processed: ", result$n_components)
+      
+      # Skip to result creation
+      # (Continue with the same result creation code as single component)
+    }
+  }
+  
+  # ---- SINGLE COMPONENT (or fallback) ----
+  if (!plotwise || length(mesh_list) == 0) {
     # Original: process only the largest component
-    message("2. Getting largest connected component...")
-    mesh = DiscreteMorseR::get_CCMESH(a, select_largest = TRUE)
+    if (!exists("mesh")) {
+      message("2. Getting largest connected component...")
+      mesh = DiscreteMorseR::get_CCMESH(a, select_largest = TRUE)
+    }
     
     # Compute Morse complex
     message("3. Computing Morse complex...")
@@ -298,6 +329,8 @@ TTS_segmentation <- function(las,
       stop("method must be 'morse-smale' or 'gradient'")
     }
   }
+  
+  # ---- CREATE RESULT OBJECT (same for both modes) ----
   
   # Ensure all required fields exist
   if (!"ascending_regions" %in% names(result)) {
