@@ -14,7 +14,8 @@ TTS_segmentation(
   max_distance = 2,
   grid_size = 5,
   method = "morse-smale",
-  cores = 2
+  cores = 2,
+  plotwise = FALSE
 )
 }
 \arguments{
@@ -37,6 +38,10 @@ TTS_segmentation(
 \item{method}{Segmentation method: "morse-smale" (default) or "gradient"}
 
 \item{cores}{Number of CPU threads for parallel processing (default: 2)}
+
+\item{plotwise}{If TRUE, process all connected components of the alpha-complex mesh.
+If FALSE (default), process only the largest component.
+Set to TRUE for complete plot-wise forest inventory.}
 }
 \value{
 A list containing:

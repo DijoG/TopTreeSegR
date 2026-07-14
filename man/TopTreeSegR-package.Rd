@@ -18,7 +18,7 @@ TopTreeSegR implements advanced topological methods for tree segmentation:
 \item \strong{Morse-Smale Complex}: Partition of space into ascending/descending manifolds from critical points
 \item \strong{Alpha Complex}: Topologically correct subset of Delaunay triangulation for point cloud simplification
 \item \strong{Forman Gradient}: Discrete vector field representing flow direction on the mesh
-\item \strong{Bayesian Inference}: Posterior = Prior × Likelihood, with MAP estimation for optimal labeling
+\item \strong{Bayesian Inference}: Posterior = Prior x Likelihood, with MAP estimation for optimal labeling
 \item \strong{Gaussian Likelihood}: Models elevation consistency within each tree segment
 \item \strong{Markovian Prior}: Captures spatial coherence through neighborhood relationships
 }
@@ -28,6 +28,7 @@ TopTreeSegR implements advanced topological methods for tree segmentation:
 \item C++-accelerated Morse-Smale complex computation
 \item Bayesian boundary refinement with spatial and elevation consistency
 \item \strong{Density-based seed detection} (no spatial_eps tuning required!)
+\item \strong{Plot-wise processing} (process all mesh components for complete plot coverage)
 \item Optimized parameters for >0.85 Adjusted Rand Index
 \item Parallel processing for large datasets
 \item 3D visualization and validation tools
