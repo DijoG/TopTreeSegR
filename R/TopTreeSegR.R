@@ -162,14 +162,15 @@ TTS_segmentation <- function(las,
     
     # ---- INTELLIGENT FILTERING: Only keep components with minima below stem_height ----
     mesh_list_filtered = list()
+    component_indices = c()
     
     for (i in seq_along(mesh_list)) {
       mesh = mesh_list[[i]]
       vertices = mesh$vertices
       
-      # Check if any vertex is below stem_height (potential trunk)
       if (any(vertices[, 3] < stem_height)) {
         mesh_list_filtered = c(mesh_list_filtered, list(mesh))
+        component_indices = c(component_indices, i)
       } else {
         message(sprintf("  Skipping component %d: no minima below stem_height (%.2fm)", 
                         i, stem_height))
@@ -181,20 +182,32 @@ TTS_segmentation <- function(las,
     
     if (length(mesh_list) == 0) {
       warning("No components with potential trunks found! Falling back to single component.")
-      # Fallback: process the largest component
       mesh = DiscreteMorseR::get_CCMESH(a, select_largest = TRUE)
-      plotwise = FALSE  # Reset to single component mode for the rest
-      # Continue with single component logic below
+      plotwise = FALSE
+      # Continue with single component logic...
     } else {
       # Process each kept component
       all_results = list()
+      all_original_pids = c()  # NEW: Collect original_pid from all components
       
       for (i in seq_along(mesh_list)) {
         mesh = mesh_list[[i]]
-        message(sprintf("  Processing component %d/%d (%d vertices)...", 
-                        i, length(mesh_list), nrow(mesh$vertices)))
+        comp_idx = component_indices[i]
         
-        # Compute Morse complex for this component
+        # Check vertical extent
+        vertices = mesh$vertices
+        z_range = range(vertices[, 3])
+        vertical_extent = diff(z_range)
+        
+        if (vertical_extent < 0.3) {
+          message(sprintf("  Skipping component %d (vertical extent < 0.3m)", comp_idx))
+          next
+        }
+        
+        message(sprintf("  Processing component %d/%d (%d vertices, vertical extent: %.2fm)...", 
+                        i, length(mesh_list), nrow(mesh$vertices), vertical_extent))
+        
+        # Compute Morse complex
         morse_complex = DiscreteMorseR::compute_MORSE_complex(
           mesh, 
           output_dir = NULL, 
@@ -235,6 +248,7 @@ TTS_segmentation <- function(las,
         }
         
         all_results[[i]] = result
+        all_original_pids = c(all_original_pids, vertices_df$i123)  # NEW: Collect pids
       }
       
       # Check if we have any results
@@ -253,7 +267,7 @@ TTS_segmentation <- function(las,
       labeled_count = sum(sapply(all_results, function(x) x$labeled_via_msmale))
       spatially_assigned = sum(sapply(all_results, function(x) x$spatially_assigned))
       
-      # Create merged result
+      # Create merged result with combined original_pid
       result = list(
         mesh_labels = combined_labels,
         mesh_coords = combined_coords,
@@ -264,7 +278,8 @@ TTS_segmentation <- function(las,
         labeled_via_msmale = labeled_count,
         spatially_assigned = spatially_assigned,
         ascending_regions = integer(0),
-        n_components = length(all_results)
+        n_components = length(all_results),
+        original_pid = all_original_pids  # NEW: All pids from all components
       )
       
       message("  Total trees: ", result$n_trees)
