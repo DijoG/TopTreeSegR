@@ -73,14 +73,10 @@ NULL
 #' @param input_truth Point ID attribute from las, if not found generated (default: "pid")
 #' @param stem_height Height threshold for detecting stem seeds (default: 0.5)
 #' @param density_cell Cell size for density-based seed detection (default: 1.0)
-#' @param density_min Minimum density for a seed (default: 2)
 #' @param max_distance Maximum distance for minima connectivity (default: 2.0)
 #' @param grid_size Grid size for spatial hashing in large datasets (default: 5.0)
 #' @param method Segmentation method: "morse-smale" (default) or "gradient"
 #' @param cores Number of CPU threads for parallel processing (default: 2)
-#' @param plotwise If TRUE, process all connected components of the alpha-complex mesh.
-#'        If FALSE (default), process only the largest component.
-#'        Set to TRUE for complete plot-wise forest inventory.
 #' 
 #' @return A list containing:
 #' \itemize{
@@ -101,23 +97,16 @@ TTS_segmentation <- function(las,
                              input_truth = "pid",
                              stem_height = 0.5,
                              density_cell = 1.0,
-                             density_min = 2,
                              max_distance = 2.0,
                              grid_size = 5.0,
                              method = "morse-smale",
-                             cores = 2,
-                             plotwise = FALSE) {
+                             cores = 2) {
   
   # Check dependencies
   .check_dependencies()
   
   message("=== TopTreeSegR: C++ Accelerated Tree Segmentation ===\n")
   message("Method selected: ", method)
-  if (plotwise) {
-    message("Mode: PLOT-WISE (processing all components)")
-  } else {
-    message("Mode: SINGLE COMPONENT (largest mesh only)")
-  }
   
   # Check input LAS
   if (inherits(las, "LAS")) {
@@ -153,175 +142,58 @@ TTS_segmentation <- function(las,
   message("1. Building alpha-complex...")
   a = ahull3D::ahull3D(points = coords, alpha = alpha, input_truth = input_truth_vec)
   
-  # ---- Initialize variables that might be used in both modes ----
-  result = NULL
-  vertices_df = NULL
-  mesh = NULL
-  all_original_pids = NULL
+  # Step 2: Get all connected components with intelligent filtering
+  message("2. Getting all connected components...")
+  mesh_list = DiscreteMorseR::get_CCMESH(a, select_largest = FALSE)
+  message("  Found ", length(mesh_list), " total components")
   
-  # Step 2: Get mesh components
-  if (plotwise) {
-    # Process ALL components with intelligent filtering
-    message("2. Getting all connected components...")
-    mesh_list = DiscreteMorseR::get_CCMESH(a, select_largest = FALSE)
-    message("  Found ", length(mesh_list), " total components")
+  # ---- INTELLIGENT FILTERING: Only keep components with minima below stem_height ----
+  mesh_list_filtered = list()
+  component_indices = c()
+  
+  for (i in seq_along(mesh_list)) {
+    mesh = mesh_list[[i]]
+    vertices = mesh$vertices
     
-    # ---- INTELLIGENT FILTERING: Only keep components with minima below stem_height ----
-    mesh_list_filtered = list()
-    component_indices = c()
-    
-    for (i in seq_along(mesh_list)) {
-      mesh = mesh_list[[i]]
-      vertices = mesh$vertices
-      
-      if (any(vertices[, 3] < stem_height)) {
-        mesh_list_filtered = c(mesh_list_filtered, list(mesh))
-        component_indices = c(component_indices, i)
-      } else {
-        message(sprintf("  Skipping component %d: no minima below stem_height (%.2fm)", 
-                        i, stem_height))
-      }
-    }
-    
-    mesh_list = mesh_list_filtered
-    message("  Keeping ", length(mesh_list), " components with potential trunks")
-    
-    if (length(mesh_list) == 0) {
-      warning("No components with potential trunks found! Falling back to single component.")
-      mesh = DiscreteMorseR::get_CCMESH(a, select_largest = TRUE)
-      plotwise = FALSE
-      # Continue with single component logic...
+    if (any(vertices[, 3] < stem_height)) {
+      mesh_list_filtered = c(mesh_list_filtered, list(mesh))
+      component_indices = c(component_indices, i)
     } else {
-      # Process each kept component
-      all_results = list()
-      all_original_pids = c()
-      offset = 0  # Initialize label offset
-      
-      for (i in seq_along(mesh_list)) {
-        mesh = mesh_list[[i]]
-        comp_idx = component_indices[i]
-        
-        # Check vertical extent
-        vertices = mesh$vertices
-        z_range = range(vertices[, 3])
-        vertical_extent = diff(z_range)
-        
-        if (vertical_extent < 0.3) {
-          message(sprintf("  Skipping component %d (vertical extent < 0.3m)", comp_idx))
-          next
-        }
-        
-        message(sprintf("  Processing component %d/%d (%d vertices, vertical extent: %.2fm)...", 
-                        i, length(mesh_list), nrow(mesh$vertices), vertical_extent))
-        
-        # Compute Morse complex
-        morse_complex = DiscreteMorseR::compute_MORSE_complex(
-          mesh, 
-          output_dir = NULL, 
-          cores = cores
-        )
-        
-        # Fix Z column if it's character
-        vertices_df = morse_complex$simplices$vertices
-        
-        if (is.character(vertices_df$Z)) {
-          vertices_df$Z = as.numeric(vertices_df$Z)
-        }
-        
-        vertices_df$X = as.numeric(vertices_df$X)
-        vertices_df$Y = as.numeric(vertices_df$Y)
-        vertices_df$Z = as.numeric(vertices_df$Z)
-        vertices_df$i123 = as.integer(vertices_df$i123)
-        
-        # Segment this component
-        if (method == "morse-smale") {
-          result = morse_smale_segment_cpp(
-            vertices_df = vertices_df,
-            morse_complex_data = morse_complex,
-            stem_height = stem_height,
-            density_cell = density_cell,
-            density_min = density_min
-          )
-        } else if (method == "gradient") {
-          result = tree_segment_cpp(
-            vertices_df = vertices_df,
-            morse_complex_data = morse_complex,
-            stem_height = stem_height,
-            max_distance = max_distance,
-            grid_size = grid_size
-          )
-        } else {
-          stop("method must be 'morse-smale' or 'gradient'")
-        }
-        
-        # --- FIX 1: Apply label offset to make labels unique across components ---
-        if (result$n_trees > 0) {
-          # Get current max label in this component
-          max_label = max(result$mesh_labels, na.rm = TRUE)
-          
-          # Add offset to make labels unique across components
-          if (offset > 0) {
-            result$mesh_labels = result$mesh_labels + offset
-          }
-          
-          # Update offset for next component
-          offset = offset + max_label
-        }
-        
-        all_results[[i]] = result
-        all_original_pids = c(all_original_pids, vertices_df$i123)
-      }
-      
-      # Check if we have any results
-      if (length(all_results) == 0) {
-        stop("No components could be processed successfully!")
-      }
-      
-      # ---- MERGE RESULTS ----
-      message("3. Merging results from all components...")
-      
-      combined_labels = unlist(lapply(all_results, function(x) x$mesh_labels))
-      combined_coords = do.call(rbind, lapply(all_results, function(x) x$mesh_coords))
-      combined_seeds = unlist(lapply(all_results, function(x) x$seeds))
-      combined_minima = unlist(lapply(all_results, function(x) x$minima))
-      
-      labeled_count = sum(sapply(all_results, function(x) x$labeled_via_msmale))
-      spatially_assigned = sum(sapply(all_results, function(x) x$spatially_assigned))
-      
-      n_trees_total = length(unique(combined_labels[combined_labels > 0]))
-      
-      message("  Total unique trees: ", n_trees_total)
-      message("  Components processed: ", length(all_results))
-      
-      # Create merged result
-      result = list(
-        mesh_labels = combined_labels,
-        mesh_coords = combined_coords,
-        seeds = combined_seeds,
-        minima = combined_minima,
-        n_trees = n_trees_total,
-        method = "morse_smale",
-        labeled_via_msmale = labeled_count,
-        spatially_assigned = spatially_assigned,
-        ascending_regions = integer(0),
-        n_components = length(all_results)
-        # original_pid will be added later
-      )
-      
-      # Skip to result creation
+      message(sprintf("  Skipping component %d: no minima below stem_height (%.2fm)", 
+                      i, stem_height))
     }
   }
   
-  # ---- SINGLE COMPONENT (or fallback) ----
-  if (!plotwise || length(mesh_list) == 0) {
-    # Original: process only the largest component
-    if (!exists("mesh")) {
-      message("2. Getting largest connected component...")
-      mesh = DiscreteMorseR::get_CCMESH(a, select_largest = TRUE)
+  mesh_list = mesh_list_filtered
+  message("  Keeping ", length(mesh_list), " components with potential trunks")
+  
+  if (length(mesh_list) == 0) {
+    stop("No components with potential trunks found!")
+  }
+  
+  # Process each kept component
+  all_results = list()
+  all_original_pids = c()
+  offset = 0  # Initialize label offset
+  
+  for (i in seq_along(mesh_list)) {
+    mesh = mesh_list[[i]]
+    comp_idx = component_indices[i]
+    
+    # Check vertical extent
+    vertices = mesh$vertices
+    z_range = range(vertices[, 3])
+    vertical_extent = diff(z_range)
+    
+    if (vertical_extent < 0.3) {
+      message(sprintf("  Skipping component %d (vertical extent < 0.3m)", comp_idx))
+      next
     }
     
+    message(sprintf("  Processing component %d/%d (%d vertices, vertical extent: %.2fm)...", 
+                    i, length(mesh_list), nrow(mesh$vertices), vertical_extent))
+    
     # Compute Morse complex
-    message("3. Computing Morse complex...")
     morse_complex = DiscreteMorseR::compute_MORSE_complex(
       mesh, 
       output_dir = NULL, 
@@ -332,7 +204,6 @@ TTS_segmentation <- function(las,
     vertices_df = morse_complex$simplices$vertices
     
     if (is.character(vertices_df$Z)) {
-      message("  Converting Z column from character to numeric...")
       vertices_df$Z = as.numeric(vertices_df$Z)
     }
     
@@ -341,18 +212,14 @@ TTS_segmentation <- function(las,
     vertices_df$Z = as.numeric(vertices_df$Z)
     vertices_df$i123 = as.integer(vertices_df$i123)
     
-    # Step 4: Segment trees using C++
-    message("4. Segmenting trees (C++ implementation)...")
-    
+    # Segment this component
     if (method == "morse-smale") {
       result = morse_smale_segment_cpp(
         vertices_df = vertices_df,
         morse_complex_data = morse_complex,
         stem_height = stem_height,
-        density_cell = density_cell,
-        density_min = density_min
+        density_cell = density_cell
       )
-      
     } else if (method == "gradient") {
       result = tree_segment_cpp(
         vertices_df = vertices_df,
@@ -361,11 +228,60 @@ TTS_segmentation <- function(las,
         max_distance = max_distance,
         grid_size = grid_size
       )
-      
     } else {
       stop("method must be 'morse-smale' or 'gradient'")
     }
+    
+    # Apply label offset to make labels unique across components
+    if (result$n_trees > 0) {
+      max_label = max(result$mesh_labels, na.rm = TRUE)
+      
+      if (offset > 0) {
+        result$mesh_labels = result$mesh_labels + offset
+      }
+      
+      offset = offset + max_label
+    }
+    
+    all_results[[i]] = result
+    all_original_pids = c(all_original_pids, vertices_df$i123)
   }
+  
+  # Check if we have any results
+  if (length(all_results) == 0) {
+    stop("No components could be processed successfully!")
+  }
+  
+  # ---- MERGE RESULTS ----
+  message("3. Merging results from all components...")
+  
+  combined_labels = unlist(lapply(all_results, function(x) x$mesh_labels))
+  combined_coords = do.call(rbind, lapply(all_results, function(x) x$mesh_coords))
+  combined_seeds = unlist(lapply(all_results, function(x) x$seeds))
+  combined_minima = unlist(lapply(all_results, function(x) x$minima))
+  
+  labeled_count = sum(sapply(all_results, function(x) x$labeled_via_msmale))
+  spatially_assigned = sum(sapply(all_results, function(x) x$spatially_assigned))
+  
+  n_trees_total = length(unique(combined_labels[combined_labels > 0]))
+  
+  message("  Total unique trees: ", n_trees_total)
+  message("  Components processed: ", length(all_results))
+  
+  # Create merged result
+  result = list(
+    mesh_labels = combined_labels,
+    mesh_coords = combined_coords,
+    seeds = combined_seeds,
+    minima = combined_minima,
+    n_trees = n_trees_total,
+    method = "morse_smale",
+    labeled_via_msmale = labeled_count,
+    spatially_assigned = spatially_assigned,
+    ascending_regions = integer(0),
+    n_components = length(all_results),
+    original_pid = all_original_pids
+  )
   
   # ---- CREATE RESULT OBJECT ----
   
@@ -382,13 +298,20 @@ TTS_segmentation <- function(las,
     result$minima = integer(0)
   }
   
-  # --- FIX 2: Determine the correct original_pid vector ---
-  if (plotwise && exists("all_original_pids") && length(all_original_pids) > 0) {
-    # In plotwise mode, use the collected pids from all components
-    original_pid_vector = all_original_pids
-  } else {
-    # In single component mode, use the current vertices_df
-    original_pid_vector = vertices_df$i123
+  # Convert seeds from i123 to row indices if needed
+  if (length(result$seeds) > 0 && all(result$seeds > nrow(vertices_df))) {
+    seeds_rows = match(result$seeds, vertices_df$i123)
+    seeds_rows = seeds_rows[!is.na(seeds_rows)]
+    if (!"seeds_rows" %in% names(result)) {
+      result$seeds_rows = seeds_rows
+    }
+  }
+  
+  # Convert minima to row indices if they're i123 values
+  if (length(result$minima) > 0 && all(result$minima > nrow(vertices_df))) {
+    minima_rows = match(result$minima, vertices_df$i123)
+    minima_rows = minima_rows[!is.na(minima_rows)]
+    result$minima = minima_rows
   }
   
   # Statistics
@@ -398,12 +321,10 @@ TTS_segmentation <- function(las,
   
   if (method == "morse-smale") {
     message("Seed detection: density-based (cell=", density_cell, 
-            "m, min=", density_min, ")")
+            "m)")
   }
   
-  if (plotwise && !is.null(result$n_components)) {
-    message("Components processed: ", result$n_components)
-  }
+  message("Components processed: ", result$n_components)
   
   if (length(result$mesh_labels) > 0) {
     valid_labels = result$mesh_labels[result$mesh_labels > 0]
@@ -426,7 +347,7 @@ TTS_segmentation <- function(las,
   # Create final result object
   result_obj = list(
     labels = result$mesh_labels,
-    original_pid = original_pid_vector,
+    original_pid = result$original_pid,
     mesh_coords = result$mesh_coords,
     n_trees = as.integer(result$n_trees),
     minima = as.integer(result$minima),
@@ -437,11 +358,9 @@ TTS_segmentation <- function(las,
       alpha = alpha,
       stem_height = stem_height,
       density_cell = density_cell,
-      density_min = density_min,
       max_distance = max_distance,
       grid_size = grid_size,
-      cores = cores,
-      plotwise = plotwise
+      cores = cores
     )
   )
   
@@ -462,7 +381,7 @@ TTS_segmentation <- function(las,
     result_obj$edge_count = as.integer(result$edge_count)
   }
   
-  if (plotwise && !is.null(result$n_components)) {
+  if (!is.null(result$n_components)) {
     result_obj$n_components = as.integer(result$n_components)
   }
   
@@ -607,11 +526,7 @@ TTS_BBR <- function(TTS_result,
 #' @param input_truth Point ID attribute from las (default: "pid")
 #' @param stem_height Height threshold for detecting stem seeds (default: 0.5)
 #' @param density_cell Cell size for density-based seed detection (default: 1.0)
-#' @param density_min Minimum density for a seed (default: 2)
 #' @param cores Number of CPU threads for parallel processing (default: 2)
-#' @param plotwise If TRUE, process all connected components of the alpha-complex mesh.
-#'        If FALSE (default), process only the largest component.
-#'        Set to TRUE for complete plot-wise forest inventory.
 #' 
 #' @param prior_strength Spatial consistency strength in Bayesian refinement.
 #'   Controls how much points should match their neighbors' labels.
@@ -652,14 +567,7 @@ TTS_BBR <- function(TTS_result,
 #' # With custom density parameters for dense forests
 #' result <- TTS_pipeline(
 #'   las = my_las_data,
-#'   density_cell = 1.0,    # Cell size for density grid
-#'   density_min = 2        # Minimum density for seed
-#' )
-#'
-#' # Plot-wise processing (process all components)
-#' result <- TTS_pipeline(
-#'   las = my_las_data,
-#'   plotwise = TRUE        # Complete plot coverage
+#'   density_cell = 1.0    # Cell size for density grid
 #' )
 #'
 #' # Validate results (if ground truth available)
@@ -678,9 +586,7 @@ TTS_pipeline <- function(las,
                          input_truth = "pid",
                          stem_height = 0.5,
                          density_cell = 1.0,
-                         density_min = 2,
                          cores = 2,
-                         plotwise = FALSE,
                          prior_strength = 1.0,
                          likelihood_strength = 1.6,
                          confidence_threshold = 1.0,
@@ -693,16 +599,10 @@ TTS_pipeline <- function(las,
     message(sprintf("  Alpha: %.2f", alpha))
     message(sprintf("  Stem height: %.1f", stem_height))
     message(sprintf("  Cores: %d", cores))
-    if (plotwise) {
-      message("  Mode: PLOT-WISE (all components)")
-    } else {
-      message("  Mode: SINGLE COMPONENT (largest mesh)")
-    }
     
     if (method == "morse-smale") {
       message("  Seed detection: density-based")
       message(sprintf("    Cell size: %.1fm", density_cell))
-      message(sprintf("    Min density: %d", density_min))
     }
     
     message("\nBayesian Refinement:")
@@ -717,7 +617,7 @@ TTS_pipeline <- function(las,
     }
   }
   
-  # STEP 1: Initial segmentation
+  # STEP 1: Initial segmentation (always plotwise)
   if (verbose) message("\n1. Performing initial segmentation...")
   
   result = TTS_segmentation(
@@ -726,16 +626,14 @@ TTS_pipeline <- function(las,
     input_truth = input_truth,
     stem_height = stem_height,
     density_cell = density_cell,
-    density_min = density_min,
     method = method,
-    cores = cores,
-    plotwise = plotwise
+    cores = cores
   )
   
   if (verbose) {
     message(sprintf("  [OK] Detected %d trees", result$n_trees))
     message(sprintf("  [OK] Mesh vertices: %d", nrow(result$mesh_coords)))
-    if (plotwise && !is.null(result$n_components)) {
+    if (!is.null(result$n_components)) {
       message(sprintf("  [OK] Components: %d", result$n_components))
     }
   }
@@ -756,12 +654,10 @@ TTS_pipeline <- function(las,
     segmentation_method = method,
     alpha = alpha,
     stem_height = stem_height,
-    plotwise = plotwise,
     seed_detection = if(method == "morse-smale") {
       list(
         method = "density-based",
-        density_cell = density_cell,
-        density_min = density_min
+        density_cell = density_cell
       )
     } else {
       list(method = "Morse-Smale minima")
@@ -782,13 +678,11 @@ TTS_pipeline <- function(las,
     message("\n=== Pipeline Complete ===")
     message(sprintf("Final trees: %d", result$n_trees))
     
-    # Hint about validation if ground truth column exists
     if ("treeid" %in% names(las@data)) {
       message("\n[INFO] Ground truth column 'treeid' detected.")
       message("  Run validate_TTS(result, las) for accuracy metrics.")
     }
     
-    # Performance hint
     if (result$n_trees > 0) {
       avg_points = round(nrow(result$mesh_coords) / result$n_trees)
       message(sprintf("Average points per tree: ~%d", avg_points))
@@ -816,17 +710,8 @@ print.TTS_pipeline_result <- function(x, ...) {
       cat(sprintf("  %-22s: %s\n", "Method", x$pipeline$seed_detection$method))
       cat(sprintf("  %-22s: %.1fm\n", "Cell size", 
                   x$pipeline$seed_detection$density_cell))
-      cat(sprintf("  %-22s: %d\n", "Min density", 
-                  x$pipeline$seed_detection$density_min))
     } else {
       cat(sprintf("  %-22s: %s\n", "Method", "Morse-Smale minima"))
-    }
-    
-    cat("\nProcessing Mode:\n")
-    if (!is.null(x$pipeline$plotwise) && x$pipeline$plotwise) {
-      cat(sprintf("  %-22s: %s\n", "Mode", "PLOT-WISE (all components)"))
-    } else {
-      cat(sprintf("  %-22s: %s\n", "Mode", "Single component (largest mesh)"))
     }
     
     cat("\nRefinement Parameters:\n")
@@ -913,7 +798,6 @@ print.TTS_result <- function(x, ...) {
   cat(sprintf("  alpha: %.2f\n", x$parameters$alpha))
   cat(sprintf("  stem_height: %.2f\n", x$parameters$stem_height))
   cat(sprintf("  density_cell: %.2f\n", x$parameters$density_cell))
-  cat(sprintf("  density_min: %d\n", x$parameters$density_min))
   cat(sprintf("  max_distance: %.2f\n", x$parameters$max_distance))
   if (!is.null(x$parameters$plotwise)) {
     cat(sprintf("  plotwise: %s\n", ifelse(x$parameters$plotwise, "TRUE", "FALSE")))
@@ -1362,7 +1246,7 @@ map_mesh_to_points_cpp <- function(mesh_coords, mesh_labels, point_coords,
 morse_smale_segment_cpp <- function(vertices_df, morse_complex_data, 
                                     stem_height = 0.5, 
                                     density_cell = 1.0,
-                                    density_min = 2) {
+                                    density_min = 1) {
   .Call(`_TopTreeSegR_morse_smale_segment_cpp`, vertices_df, morse_complex_data, 
         stem_height, density_cell, density_min)
 }

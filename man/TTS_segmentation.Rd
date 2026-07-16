@@ -10,12 +10,10 @@ TTS_segmentation(
   input_truth = "pid",
   stem_height = 0.5,
   density_cell = 1,
-  density_min = 2,
   max_distance = 2,
   grid_size = 5,
   method = "morse-smale",
-  cores = 2,
-  plotwise = FALSE
+  cores = 2
 )
 }
 \arguments{
@@ -29,8 +27,6 @@ TTS_segmentation(
 
 \item{density_cell}{Cell size for density-based seed detection (default: 1.0)}
 
-\item{density_min}{Minimum density for a seed (default: 2)}
-
 \item{max_distance}{Maximum distance for minima connectivity (default: 2.0)}
 
 \item{grid_size}{Grid size for spatial hashing in large datasets (default: 5.0)}
@@ -38,10 +34,6 @@ TTS_segmentation(
 \item{method}{Segmentation method: "morse-smale" (default) or "gradient"}
 
 \item{cores}{Number of CPU threads for parallel processing (default: 2)}
-
-\item{plotwise}{If TRUE, process all connected components of the alpha-complex mesh.
-If FALSE (default), process only the largest component.
-Set to TRUE for complete plot-wise forest inventory.}
 }
 \value{
 A list containing:

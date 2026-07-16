@@ -107,7 +107,6 @@ result <- TTS_pipeline(
   alpha = 0.1,
   stem_height = 0.5,
   density_cell = 1.0,    # Cell size for density grid (m)
-  density_min = 2,       # Minimum minima per cell for seed
   cores = 16
 )
 ```
@@ -123,12 +122,10 @@ res <- TTS_pipeline(
   alpha = 0.1,                      # default ~ alpha value for alpha hull 
   stem_height = 0.5,                # default ~  find seeds below this height (m) 
   density_cell = 1.0,               # default ~ cell size (m) for density grid 
-  density_min = 2,                  # default ~ minimum density for seed 
   prior_strength = 1.0,             # default ~ spatial consistency 
   likelihood_strength = 1.6,        # defaul ~, elevation consistency (key!)
   confidence_threshold = 1.0,       # 1) default ~ aggressive refinement 
-  cores = 16,
-  fix_fragments = TRUE)
+  cores = 16)
 tictoc::tic() # ~77 seconds
 
 validate_TTS(res, trees)  # ARI: 0.8416
@@ -220,7 +217,6 @@ RAW POINTS → ALPHA-COMPLEX → MORSE COMPLEX → SEGMENTATION → BAYESIAN REF
 |-----------|---------|-------------|
 | `stem_height` | 0.5 | Max height for minima to be considered seeds (m) |
 | `density_cell` | 1.0 | Cell size for density grid (m) |
-| `density_min` | 2 | Minimum number of minima per cell for a seed |
 
 ### Bayesian Refinement Parameters
 

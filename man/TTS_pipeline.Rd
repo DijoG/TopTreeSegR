@@ -11,9 +11,7 @@ TTS_pipeline(
   input_truth = "pid",
   stem_height = 0.5,
   density_cell = 1,
-  density_min = 2,
   cores = 2,
-  plotwise = FALSE,
   prior_strength = 1,
   likelihood_strength = 1.6,
   confidence_threshold = 1,
@@ -33,13 +31,7 @@ TTS_pipeline(
 
 \item{density_cell}{Cell size for density-based seed detection (default: 1.0)}
 
-\item{density_min}{Minimum density for a seed (default: 2)}
-
 \item{cores}{Number of CPU threads for parallel processing (default: 2)}
-
-\item{plotwise}{If TRUE, process all connected components of the alpha-complex mesh.
-If FALSE (default), process only the largest component.
-Set to TRUE for complete plot-wise forest inventory.}
 
 \item{prior_strength}{Spatial consistency strength in Bayesian refinement.
 Controls how much points should match their neighbors' labels.
@@ -87,14 +79,7 @@ result <- TTS_pipeline(las = my_las_data)
 # With custom density parameters for dense forests
 result <- TTS_pipeline(
   las = my_las_data,
-  density_cell = 1.0,    # Cell size for density grid
-  density_min = 2        # Minimum density for seed
-)
-
-# Plot-wise processing (process all components)
-result <- TTS_pipeline(
-  las = my_las_data,
-  plotwise = TRUE        # Complete plot coverage
+  density_cell = 1.0    # Cell size for density grid
 )
 
 # Validate results (if ground truth available)
