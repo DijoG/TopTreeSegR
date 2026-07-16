@@ -347,7 +347,7 @@ TTS_segmentation <- function(las,
   # Create final result object
   result_obj = list(
     labels = result$mesh_labels,
-    original_pid = result$original_pid,
+    original_pid = result$original_pid,   # <-- FIXED: Use the merged original_pid
     mesh_coords = result$mesh_coords,
     n_trees = as.integer(result$n_trees),
     minima = as.integer(result$minima),
