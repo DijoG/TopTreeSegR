@@ -188,7 +188,7 @@ TTS_segmentation <- function(las,
     } else {
       # Process each kept component
       all_results = list()
-      all_original_pids = c()  # NEW: Collect original_pid from all components
+      all_original_pids = c()  # Collect original_pid from all components
       
       for (i in seq_along(mesh_list)) {
         mesh = mesh_list[[i]]
@@ -248,7 +248,7 @@ TTS_segmentation <- function(las,
         }
         
         all_results[[i]] = result
-        all_original_pids = c(all_original_pids, vertices_df$i123)  # NEW: Collect pids
+        all_original_pids = c(all_original_pids, vertices_df$i123)  # Collect pids
       }
       
       # Check if we have any results
@@ -279,7 +279,7 @@ TTS_segmentation <- function(las,
         spatially_assigned = spatially_assigned,
         ascending_regions = integer(0),
         n_components = length(all_results),
-        original_pid = all_original_pids  # NEW: All pids from all components
+        original_pid = all_original_pids  # All pids from all components
       )
       
       message("  Total trees: ", result$n_trees)
@@ -360,6 +360,13 @@ TTS_segmentation <- function(las,
     result$minima = integer(0)
   }
   
+  # Determine the correct original_pid vector
+  if (plotwise && exists("all_original_pids") && length(all_original_pids) > 0) {
+    original_pid_vector = all_original_pids
+  } else {
+    original_pid_vector = vertices_df$i123
+  }
+  
   # Convert seeds from i123 to row indices if needed
   if (length(result$seeds) > 0 && all(result$seeds > nrow(vertices_df))) {
     seeds_rows = match(result$seeds, vertices_df$i123)
@@ -411,7 +418,7 @@ TTS_segmentation <- function(las,
   # Create result object
   result_obj = list(
     labels = result$mesh_labels,
-    original_pid = vertices_df$i123,
+    original_pid = original_pid_vector,  # FIXED: uses combined pids for plotwise
     mesh_coords = result$mesh_coords,
     n_trees = as.integer(result$n_trees),
     minima = as.integer(result$minima),
