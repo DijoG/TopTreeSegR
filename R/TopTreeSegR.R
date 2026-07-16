@@ -153,6 +153,12 @@ TTS_segmentation <- function(las,
   message("1. Building alpha-complex...")
   a = ahull3D::ahull3D(points = coords, alpha = alpha, input_truth = input_truth_vec)
   
+  # ---- Initialize variables that might be used in both modes ----
+  result = NULL
+  vertices_df = NULL
+  mesh = NULL
+  all_original_pids = NULL
+  
   # Step 2: Get mesh components
   if (plotwise) {
     # Process ALL components with intelligent filtering
@@ -188,7 +194,8 @@ TTS_segmentation <- function(las,
     } else {
       # Process each kept component
       all_results = list()
-      all_original_pids = c()  # Collect original_pid from all components
+      all_original_pids = c()
+      offset = 0  # Initialize label offset
       
       for (i in seq_along(mesh_list)) {
         mesh = mesh_list[[i]]
@@ -247,8 +254,22 @@ TTS_segmentation <- function(las,
           stop("method must be 'morse-smale' or 'gradient'")
         }
         
+        # --- FIX 1: Apply label offset to make labels unique across components ---
+        if (result$n_trees > 0) {
+          # Get current max label in this component
+          max_label = max(result$mesh_labels, na.rm = TRUE)
+          
+          # Add offset to make labels unique across components
+          if (offset > 0) {
+            result$mesh_labels = result$mesh_labels + offset
+          }
+          
+          # Update offset for next component
+          offset = offset + max_label
+        }
+        
         all_results[[i]] = result
-        all_original_pids = c(all_original_pids, vertices_df$i123)  # Collect pids
+        all_original_pids = c(all_original_pids, vertices_df$i123)
       }
       
       # Check if we have any results
@@ -256,7 +277,7 @@ TTS_segmentation <- function(las,
         stop("No components could be processed successfully!")
       }
       
-      # Combine results from all components
+      # ---- MERGE RESULTS ----
       message("3. Merging results from all components...")
       
       combined_labels = unlist(lapply(all_results, function(x) x$mesh_labels))
@@ -267,26 +288,27 @@ TTS_segmentation <- function(las,
       labeled_count = sum(sapply(all_results, function(x) x$labeled_via_msmale))
       spatially_assigned = sum(sapply(all_results, function(x) x$spatially_assigned))
       
-      # Create merged result with combined original_pid
+      n_trees_total = length(unique(combined_labels[combined_labels > 0]))
+      
+      message("  Total unique trees: ", n_trees_total)
+      message("  Components processed: ", length(all_results))
+      
+      # Create merged result
       result = list(
         mesh_labels = combined_labels,
         mesh_coords = combined_coords,
         seeds = combined_seeds,
         minima = combined_minima,
-        n_trees = length(unique(combined_labels[combined_labels > 0])),
+        n_trees = n_trees_total,
         method = "morse_smale",
         labeled_via_msmale = labeled_count,
         spatially_assigned = spatially_assigned,
         ascending_regions = integer(0),
-        n_components = length(all_results),
-        original_pid = all_original_pids  # All pids from all components
+        n_components = length(all_results)
+        # original_pid will be added later
       )
       
-      message("  Total trees: ", result$n_trees)
-      message("  Components processed: ", result$n_components)
-      
       # Skip to result creation
-      # (Continue with the same result creation code as single component)
     }
   }
   
@@ -345,7 +367,7 @@ TTS_segmentation <- function(las,
     }
   }
   
-  # ---- CREATE RESULT OBJECT (same for both modes) ----
+  # ---- CREATE RESULT OBJECT ----
   
   # Ensure all required fields exist
   if (!"ascending_regions" %in% names(result)) {
@@ -360,27 +382,13 @@ TTS_segmentation <- function(las,
     result$minima = integer(0)
   }
   
-  # Determine the correct original_pid vector
+  # --- FIX 2: Determine the correct original_pid vector ---
   if (plotwise && exists("all_original_pids") && length(all_original_pids) > 0) {
+    # In plotwise mode, use the collected pids from all components
     original_pid_vector = all_original_pids
   } else {
+    # In single component mode, use the current vertices_df
     original_pid_vector = vertices_df$i123
-  }
-  
-  # Convert seeds from i123 to row indices if needed
-  if (length(result$seeds) > 0 && all(result$seeds > nrow(vertices_df))) {
-    seeds_rows = match(result$seeds, vertices_df$i123)
-    seeds_rows = seeds_rows[!is.na(seeds_rows)]
-    if (!"seeds_rows" %in% names(result)) {
-      result$seeds_rows = seeds_rows
-    }
-  }
-  
-  # Convert minima to row indices if they're i123 values
-  if (length(result$minima) > 0 && all(result$minima > nrow(vertices_df))) {
-    minima_rows = match(result$minima, vertices_df$i123)
-    minima_rows = minima_rows[!is.na(minima_rows)]
-    result$minima = minima_rows
   }
   
   # Statistics
@@ -415,10 +423,10 @@ TTS_segmentation <- function(las,
   message("Seeds found: ", length(result$seeds))
   message("Minima found: ", length(result$minima))
   
-  # Create result object
+  # Create final result object
   result_obj = list(
     labels = result$mesh_labels,
-    original_pid = original_pid_vector,  # FIXED: uses combined pids for plotwise
+    original_pid = original_pid_vector,
     mesh_coords = result$mesh_coords,
     n_trees = as.integer(result$n_trees),
     minima = as.integer(result$minima),
