@@ -120,10 +120,10 @@ res <- TTS_pipeline(
   method = "morse-smale",
   input_truth = "pid",              # default ~ LAS attribute of point IDs
   alpha = 0.1,                      # default ~ alpha value for alpha hull 
-  stem_height = 0.5,                # default ~  find seeds below this height (m) 
+  stem_height = 0.5,                # default ~ find seeds below this height (m) 
   density_cell = 1.0,               # default ~ cell size (m) for density grid 
   prior_strength = 1.0,             # default ~ spatial consistency 
-  likelihood_strength = 1.6,        # defaul ~, elevation consistency (key!)
+  likelihood_strength = 1.6,        # default ~ elevation consistency (key!)
   confidence_threshold = 1.0,       # 1) default ~ aggressive refinement 
   cores = 16)
 tictoc::tic() # ~77 seconds
