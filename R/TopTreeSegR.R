@@ -1085,19 +1085,35 @@ validate_TTS = function(TTS_result, lasdf, val_col = "treeid", input_truth = "pi
     conf = table(Predicted = pred_valid, Truth = truth_valid)
     
     if (requireNamespace("clue", quietly = TRUE) && nrow(conf) > 0 && ncol(conf) > 0) {
-      # Hungarian algorithm for optimal matching
-      cost = max(conf) - conf
-      assign = clue::solve_LSAP(cost, maximum = FALSE)
       
-      # Apply alignment to ALL points (including zeros)
-      lookup = integer(max(pred, na.rm = TRUE) + 1)
-      for (i in 1:nrow(conf)) {
-        old_id = as.numeric(rownames(conf)[i])
-        new_id = as.numeric(colnames(conf)[assign[i]])
-        lookup[old_id + 1] = new_id  # +1 for 0-based indexing
+      # ---- FIX: Handle case where rows > columns ----
+      if (nrow(conf) > ncol(conf)) {
+        # Transpose: treat truth as rows, predicted as columns for matching
+        conf_t <- t(conf)
+        cost = max(conf_t) - conf_t
+        assign = clue::solve_LSAP(cost, maximum = FALSE)
+        
+        # Create lookup from predicted to truth
+        lookup = integer(nrow(conf) + 1)
+        for (i in 1:ncol(conf_t)) {
+          old_id = as.numeric(colnames(conf_t)[i])
+          new_id = as.numeric(rownames(conf_t)[assign[i]])
+          lookup[old_id + 1] = new_id
+        }
+      } else {
+        # Original logic (rows <= columns)
+        cost = max(conf) - conf
+        assign = clue::solve_LSAP(cost, maximum = FALSE)
+        
+        lookup = integer(max(pred, na.rm = TRUE) + 1)
+        for (i in 1:nrow(conf)) {
+          old_id = as.numeric(rownames(conf)[i])
+          new_id = as.numeric(colnames(conf)[assign[i]])
+          lookup[old_id + 1] = new_id
+        }
       }
       
-      # Align all predictions
+      # Apply alignment to ALL points (including zeros)
       aligned_pred = pred
       non_zero = pred != 0
       aligned_pred[non_zero] = lookup[pred[non_zero] + 1]
