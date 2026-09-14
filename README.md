@@ -125,6 +125,7 @@ res <- TTS_pipeline(
   prior_strength = 1.0,             # default ~ spatial consistency 
   likelihood_strength = 1.6,        # default ~ elevation consistency (key!)
   confidence_threshold = 1.0,       # 1) default ~ aggressive refinement 
+  bbr = TRUE,                       # default ~ first BBR pass
   cores = 16)
 tictoc::tic() # ~77 seconds
 
