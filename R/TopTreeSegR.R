@@ -545,6 +545,8 @@ TTS_BBR <- function(TTS_result,
 #'   - 2.0: Change only if new label is 100% better (twice as good)
 #'   Range: 1.0 to 2.0. Default: 1.0 (aggressive, good for first pass).
 #'   
+#' @param bbr Whethet to perform the Bayesian Boundary Refinement of not (default: TRUE)
+#'   
 #' @param verbose Print progress messages (default: TRUE)
 #'
 #' @return A TTS_result object with the following components:
@@ -590,6 +592,7 @@ TTS_pipeline <- function(las,
                          prior_strength = 1.0,
                          likelihood_strength = 1.6,
                          confidence_threshold = 1.0,
+                         bbr = TRUE,
                          verbose = TRUE) {
   
   if (verbose) {
@@ -638,16 +641,20 @@ TTS_pipeline <- function(las,
     }
   }
   
-  # STEP 2: Single Bayesian refinement
-  if (verbose) message("\n2. Applying Bayesian boundary refinement...")
-  
-  result = TTS_BBR(
-    TTS_result = result,
-    prior_strength = prior_strength,
-    likelihood_strength = likelihood_strength,
-    confidence_threshold = confidence_threshold,
-    cores = cores
-  )
+  # STEP 2: Optional Bayesian refinement
+  if (bbr) {
+    if (verbose) message("\n2. Applying Bayesian boundary refinement...")
+    result = TTS_BBR(
+      TTS_result = result,
+      prior_strength = prior_strength,
+      likelihood_strength = likelihood_strength,
+      confidence_threshold = confidence_threshold,
+      cores = cores
+    )
+  } else {
+    if (verbose) message("\n2. Skipping Bayesian boundary refinement (bbr = FALSE)")
+    result$refinement = list(method = "none")
+  }
   
   # Store pipeline parameters for reproducibility
   result$pipeline = list(
@@ -708,42 +715,49 @@ print.TTS_pipeline_result <- function(x, ...) {
     cat("\nSeed Detection:\n")
     if (x$method == "morse-smale" && !is.null(x$pipeline$seed_detection$method)) {
       cat(sprintf("  %-22s: %s\n", "Method", x$pipeline$seed_detection$method))
-      cat(sprintf("  %-22s: %.1fm\n", "Cell size", 
+      cat(sprintf("  %-22s: %.1fm\n", "Cell size",
                   x$pipeline$seed_detection$density_cell))
     } else {
       cat(sprintf("  %-22s: %s\n", "Method", "Morse-Smale minima"))
     }
     
-    cat("\nRefinement Parameters:\n")
-    cat(sprintf("  %-22s: %.1f\n", "Prior strength", 
-                x$pipeline$refinement_params$prior_strength))
-    cat(sprintf("  %-22s: %.1f\n", "Likelihood strength", 
-                x$pipeline$refinement_params$likelihood_strength))
-    cat(sprintf("  %-22s: %.1f\n", "Confidence threshold", 
-                x$pipeline$refinement_params$confidence_threshold))
-    
-    # Interpret confidence threshold
-    conf = x$pipeline$refinement_params$confidence_threshold
-    if (conf == 1.0) {
-      cat("  - Aggressive refinement\n")
-    } else if (conf >= 1.5) {
-      cat("  - Conservative refinement\n")
+    # ---- refinement block: now handles refinement = "none" ----
+    cat("\nRefinement:\n")
+    if (is.null(x$pipeline$refinement) || identical(x$pipeline$refinement, "none")) {
+      cat("  BBR            : disabled\n")
+    } else {
+      rp <- x$pipeline$refinement_params
+      cat(sprintf("  %-22s: %.1f\n", "Prior strength",
+                  if (is.null(rp$prior_strength)) NA_real_ else rp$prior_strength))
+      cat(sprintf("  %-22s: %.1f\n", "Likelihood strength",
+                  if (is.null(rp$likelihood_strength)) NA_real_ else rp$likelihood_strength))
+      cat(sprintf("  %-22s: %.1f\n", "Confidence threshold",
+                  if (is.null(rp$confidence_threshold)) NA_real_ else rp$confidence_threshold))
+      
+      conf <- rp$confidence_threshold
+      if (!is.null(conf)) {
+        if (conf == 1.0) {
+          cat("  - Aggressive refinement\n")
+        } else if (conf >= 1.5) {
+          cat("  - Conservative refinement\n")
+        }
+      }
     }
   }
   
   # Label distribution
-  labels = x$labels[x$labels > 0]
+  labels <- x$labels[x$labels > 0]
   if (length(labels) > 0) {
-    label_table = table(labels)
+    label_table <- table(labels)
     cat(sprintf("\n%-25s: ", "Points per tree"))
     
     if (length(label_table) <= 5) {
-      tree_summary = sprintf("%s(%d)", names(label_table), as.numeric(label_table))
+      tree_summary <- sprintf("%s(%d)", names(label_table), as.numeric(label_table))
       cat(paste(tree_summary, collapse = ", "), "\n")
     } else {
-      cat(sprintf("%d trees, %d to %d points each\n", 
-                  length(label_table), 
-                  min(as.numeric(label_table)), 
+      cat(sprintf("%d trees, %d to %d points each\n",
+                  length(label_table),
+                  min(as.numeric(label_table)),
                   max(as.numeric(label_table))))
     }
   }
