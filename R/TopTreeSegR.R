@@ -260,8 +260,24 @@ TTS_segmentation <- function(las,
   combined_seeds = unlist(lapply(all_results, function(x) x$seeds))
   combined_minima = unlist(lapply(all_results, function(x) x$minima))
   
-  labeled_count = sum(sapply(all_results, function(x) x$labeled_via_msmale))
-  spatially_assigned = sum(sapply(all_results, function(x) x$spatially_assigned))
+  labeled_count = sum(
+    vapply(all_results,
+           function(x) {
+             v <- x$labeled_via_msmale
+             if (is.null(v) || length(v) == 0) 0L else sum(as.integer(v), na.rm = TRUE)
+           },
+           integer(1L)),
+    na.rm = TRUE
+  )
+  spatially_assigned = sum(
+    vapply(all_results,
+           function(x) {
+             v <- x$spatially_assigned
+             if (is.null(v) || length(v) == 0) 0L else sum(as.integer(v), na.rm = TRUE)
+           },
+           integer(1L)),
+    na.rm = TRUE
+  )
   
   n_trees_total = length(unique(combined_labels[combined_labels > 0]))
   
