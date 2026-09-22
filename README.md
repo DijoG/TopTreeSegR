@@ -113,7 +113,7 @@ result <- TTS_pipeline(
 ### Complete Pipeline
 
 ```r
-# TTS_pipeline includes the first BBR pass
+# TTS_pipeline
 tictoc::tic()
 res <- TTS_pipeline(
   las = trees,
