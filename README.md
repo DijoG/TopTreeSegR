@@ -110,7 +110,7 @@ result <- TTS_pipeline(
   cores = 16
 )
 ```
-### Complete Pipeline with Bayesian Boundary Refinement (BBR)
+### Complete Pipeline
 
 ```r
 # TTS_pipeline includes the first BBR pass
