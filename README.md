@@ -1,4 +1,4 @@
-# TopTreeSegR - Ultra-Fast Topological Tree Segmentation
+# TopTreeSegR - Fast Topological Tree Segmentation
 
 ![R](https://img.shields.io/badge/-%2764?style=for-the-badge&logo=r&logoColor=grey)
 ![LiDAR](https://img.shields.io/badge/LiDAR-green?style=for-the-badge)
@@ -16,7 +16,7 @@
 
 ## 🏆 Key Achievements
 
-- **Proven >0.85 Adjusted Rand Index (ARI)** with the 2-pass Bayesian Boundary Refinement pipeline on benchmark TLS datasets
+- **Proven >0.85 Adjusted Rand Index (ARI)** with the Bayesian Boundary Refinement pipeline on benchmark TLS datasets
 - **Density-based seed detection**: Automatically finds tree trunks
 - **Robust to variable tree spacing**: Works across dense and open forests without parameter adjustment
 
@@ -49,7 +49,7 @@ trees <- lidR::readLAS("your_forest.las")
 pid <- 1:lidR::npoints(trees)  
 trees_filtered <- lidR::add_lasattribute(trees, pid, "pid", "Unique point ID")
 
-# Complete pipeline: segmentation + Bayesian refinement
+# Complete pipeline: segmentation 
 result <- TopTreeSegR::TTS_pipeline(
   las = trees,
   cores = 20                  
@@ -95,7 +95,7 @@ Adj Rand I: 0.8416
 
 ## 🛠️ Advanced Usage
 
-### Density-Based Seed Detection (New!)
+### Density-Based Seed Detection 
 
 TopTreeSegR now uses **density-based seed detection**. This automatically finds tree trunks by detecting local density peaks in the mesh minima, making the method robust to variable tree spacing.
 
@@ -110,7 +110,7 @@ result <- TTS_pipeline(
   cores = 16
 )
 ```
-### Complete Pipeline with 2-Pass Bayesian Boundary Refinement (BBR)
+### Complete Pipeline with Bayesian Boundary Refinement (BBR)
 
 ```r
 # TTS_pipeline includes the first BBR pass
@@ -125,13 +125,13 @@ res <- TTS_pipeline(
   prior_strength = 1.0,             # default ~ spatial consistency 
   likelihood_strength = 1.6,        # default ~ elevation consistency (key!)
   confidence_threshold = 1.0,       # 1) default ~ aggressive refinement 
-  bbr = TRUE,                       # default ~ first BBR pass
+  bbr = FALSE,                      # default ~ no soft BBR pass
   cores = 16)
 tictoc::tic() # ~77 seconds
 
 validate_TTS(res, trees)  # ARI: 0.8416
 
-# Second BBR pass (conservative cleanup)
+# BBR pass (conservative cleanup)
 tictoc::tic()
 res2 <- TTS_BBR(
   res,

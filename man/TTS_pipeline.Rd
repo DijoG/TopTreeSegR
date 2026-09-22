@@ -15,7 +15,7 @@ TTS_pipeline(
   prior_strength = 1,
   likelihood_strength = 1.6,
   confidence_threshold = 1,
-  bbr = TRUE,
+  bbr = FALSE,
   verbose = TRUE
 )
 }
@@ -53,7 +53,7 @@ Higher values = more conservative refinement (changes fewer labels).
 Range: 1.0 to 2.0. Default: 1.0 (aggressive, good for first pass).
 }}
 
-\item{bbr}{Whethet to perform the Bayesian Boundary Refinement of not (default: TRUE)}
+\item{bbr}{Whether to perform the Bayesian Boundary Refinement of not (default: FALSE)}
 
 \item{verbose}{Print progress messages (default: TRUE)}
 }

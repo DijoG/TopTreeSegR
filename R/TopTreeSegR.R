@@ -561,7 +561,7 @@ TTS_BBR <- function(TTS_result,
 #'   - 2.0: Change only if new label is 100% better (twice as good)
 #'   Range: 1.0 to 2.0. Default: 1.0 (aggressive, good for first pass).
 #'   
-#' @param bbr Whethet to perform the Bayesian Boundary Refinement of not (default: TRUE)
+#' @param bbr Whether to perform the Bayesian Boundary Refinement of not (default: FALSE)
 #'   
 #' @param verbose Print progress messages (default: TRUE)
 #'
@@ -608,7 +608,7 @@ TTS_pipeline <- function(las,
                          prior_strength = 1.0,
                          likelihood_strength = 1.6,
                          confidence_threshold = 1.0,
-                         bbr = TRUE,
+                         bbr = FALSE,
                          verbose = TRUE) {
   
   if (verbose) {
