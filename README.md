@@ -144,7 +144,7 @@ res <- TTS_pipeline(
   prior_strength = 1.0,             # default ~ spatial consistency (active only if 'bbr = TRUE')
   likelihood_strength = 1.6,        # default ~ elevation consistency (active only if 'bbr = TRUE')
   confidence_threshold = 1.0,       # default ~ aggressive refinement (active only if 'bbr = TRUE', key!)
-  cores = 16)                       # default: 2 ~ 16 to 24 is optimal on any machine with at least 32 CPU cores     
+  cores = 16)                       # default: 2 ~ use 16-24 on any machine with at least 32 CPU cores     
 tictoc::toc() # ~61 seconds (bbr = FALSE) 
 tictoc::toc() # ~80 seconds (bbr = TRUE)
 
