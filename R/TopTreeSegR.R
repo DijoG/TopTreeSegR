@@ -546,6 +546,7 @@ TTS_BBR <- function(TTS_result,
 #' @param stem_height Height threshold for detecting stem seeds (default: 0.5)
 #' @param density_cell Cell size for density-based seed detection (default: 1.0)
 #' @param cores Number of CPU threads for parallel processing (default: 2)
+#' @param bbr Whether to perform the Bayesian Boundary Refinement of not (default: FALSE)
 #' 
 #' @param prior_strength Spatial consistency strength in Bayesian refinement.
 #'   Controls how much points should match their neighbors' labels.
@@ -563,8 +564,6 @@ TTS_BBR <- function(TTS_result,
 #'   - 1.5: Change only if new label is 50% better
 #'   - 2.0: Change only if new label is 100% better (twice as good)
 #'   Range: 1.0 to 2.0. Default: 1.0 (aggressive, good for first pass).
-#'   
-#' @param bbr Whether to perform the Bayesian Boundary Refinement of not (default: FALSE)
 #'   
 #' @param verbose Print progress messages (default: TRUE)
 #'
@@ -608,10 +607,10 @@ TTS_pipeline <- function(las,
                          stem_height = 0.5,
                          density_cell = 1.0,
                          cores = 2,
+                         bbr = FALSE,
                          prior_strength = 1.0,
                          likelihood_strength = 1.6,
                          confidence_threshold = 1.0,
-                         bbr = FALSE,
                          verbose = TRUE) {
   
   if (verbose) {
