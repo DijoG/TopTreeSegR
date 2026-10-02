@@ -193,14 +193,17 @@ TTS_segmentation <- function(las,
     message(sprintf("  Processing component %d/%d (%d vertices, vertical extent: %.2fm)...", 
                     i, length(mesh_list), nrow(mesh$vertices), vertical_extent))
     
-    # Compute Morse complex
+    # Compute Morse complex:
+    # Only parallelize large components; run tiny ones sequentially
+    use_cores <- if (nrow(mesh$vertices) > 5000) cores else 1
+    
     morse_complex = DiscreteMorseR::compute_MORSE_complex(
-      mesh, 
-      output_dir = NULL, 
-      cores = cores
+      mesh,
+      output_dir = NULL,
+      cores = use_cores
     )
     
-    # Fix Z column if it's character
+    # Fix Z column if it is character
     vertices_df = morse_complex$simplices$vertices
     
     if (is.character(vertices_df$Z)) {
