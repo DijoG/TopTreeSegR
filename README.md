@@ -145,7 +145,8 @@ res <- TTS_pipeline(
   likelihood_strength = 1.6,        # default ~ elevation consistency (active only if 'bbr = TRUE')
   confidence_threshold = 1.0,       # default ~ aggressive refinement (active only if 'bbr = TRUE', key!)
   cores = 16)                       # default: 2 ~ 16 to 24 is optimal on any machine with at least 32 CPU cores     
-tictoc::tic() # ~61 seconds (bbr = F) ~80 seconds (bbr = TRUE)
+tictoc::toc() # ~61 seconds (bbr = FALSE) 
+tictoc::toc() # ~80 seconds (bbr = TRUE)
 
 validate_TTS(res, five_trees)  # ARI: 0.7799 (bbr = FALSE)
 validate_TTS(res, five_trees)  # ARI: 0.8408 (bbr = TRUE)
