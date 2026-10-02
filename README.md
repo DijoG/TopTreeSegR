@@ -73,26 +73,26 @@ TopTreeSegR::validate_TTS(result, trees)
 # Complete pipeline benchmark on '5trees' from Wytham Woods
 # Read tree point cloud
 trees <- readLAS(".../12tree_exampleN.las")
-5_trees <- lidR::filter_poi(trees, treeid %in% c(1, 8, 9, 11, 12))
+five_trees <- lidR::filter_poi(trees, treeid %in% c(1, 8, 9, 11, 12))
 
-5_trees$treeid <- dplyr::case_when(
-  5_trees$treeid ==  1 ~ 1L,
-  5_trees$treeid ==  8 ~ 2L,
-  5_trees$treeid ==  9 ~ 3L,
-  5_trees$treeid == 11 ~ 4L,
-  5_trees$treeid == 12 ~ 5L,
-  TRUE ~ 5_trees$treeid
+five_trees$treeid <- dplyr::case_when(
+  five_trees$treeid ==  1 ~ 1L,
+  five_trees$treeid ==  8 ~ 2L,
+  five_trees$treeid ==  9 ~ 3L,
+  five_trees$treeid == 11 ~ 4L,
+  five_trees$treeid == 12 ~ 5L,
+  TRUE ~ five_trees$treeid
 )
 
-pointID <- seq_len(lidR::npoints(5_trees))
-5_trees <- lidR::add_lasattribute(
-  5_trees, PointID, "PointID", "Unique point ID")
+pointID <- seq_len(lidR::npoints(five_trees))
+five_trees <- lidR::add_lasattribute(
+  five_trees, PointID, "PointID", "Unique point ID")
 
 tictoc::tic()
-result <- TTS_pipeline(5_trees, input_truth = "PointID", cores = 16)
+result <- TTS_pipeline(five_trees, input_truth = "PointID", cores = 16)
 tictoc::toc() # ~ 77 seconds
 
-validate_TTS(result, 5_trees)
+validate_TTS(result, five_trees)
 ```
 ```text
 === TTS Segmentation Validation ===
@@ -119,7 +119,7 @@ TopTreeSegR now uses **density-based seed detection**. This automatically finds 
 ```r
 # Default parameters work across most forests (3 MUST be SET by the user)
 result <- TTS_pipeline(
-  las = 5_trees,                    # <--- DEFINE!
+  las = five_trees,                 # <--- DEFINE!
   method = "morse-smale",
   input_truth = "PointID",          # <--- DEFINE!
   alpha = 0.1,
@@ -134,7 +134,7 @@ result <- TTS_pipeline(
 # TTS_pipeline
 tictoc::tic()
 res <- TTS_pipeline(
-  las = 5_trees,
+  las = five_trees,
   method = "morse-smale",
   input_truth = "PointID",          # default: "pid" ~ LAS attribute of point IDs
   alpha = 0.1,                      # default ~ alpha value for alpha hull 
@@ -147,8 +147,8 @@ res <- TTS_pipeline(
   cores = 16)                       # default: 2 ~ 16 to 24 is optimal on any machine with at least 32 CPU cores     
 tictoc::tic() # ~61 seconds (bbr = F) ~80 seconds (bbr = TRUE)
 
-validate_TTS(res, 5_trees)  # ARI: 0.7799 (bbr = FALSE)
-validate_TTS(res, 5_trees)  # ARI: 0.8408 (bbr = TRUE)
+validate_TTS(res, five_trees)  # ARI: 0.7799 (bbr = FALSE)
+validate_TTS(res, five_trees)  # ARI: 0.8408 (bbr = TRUE)
 
 # BBR pass (weak cleanup)
 tictoc::tic()
@@ -160,8 +160,8 @@ res2 <- TTS_BBR(
   cores = 16) 
 tictoc::toc() # ~10 seconds
 
-validate_TTS(res2, 5_trees) # ARI: 0.7947 (bbr = F)
-validate_TTS(res2, 5_trees) # ARI: 0.8508 (bbr = T)
+validate_TTS(res2, five_trees) # ARI: 0.7947 (bbr = F)
+validate_TTS(res2, five_trees) # ARI: 0.8508 (bbr = T)
 ```
 
 ### Results
