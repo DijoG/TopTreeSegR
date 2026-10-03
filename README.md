@@ -86,10 +86,10 @@ five_trees$treeid <- dplyr::case_when(
 
 pointID <- seq_len(lidR::npoints(five_trees))
 five_trees <- lidR::add_lasattribute(
-  five_trees, PointID, "PointID", "Unique point ID")
+  five_trees, pointID, "pointID", "Unique point ID")
 
 tictoc::tic()
-result <- TTS_pipeline(five_trees, input_truth = "PointID", cores = 16)
+result <- TTS_pipeline(five_trees, input_truth = "pointID", cores = 16)
 tictoc::toc() # ~ 77 seconds
 
 validate_TTS(result, five_trees)
@@ -121,7 +121,7 @@ TopTreeSegR now uses **density-based seed detection**. This automatically finds 
 result <- TTS_pipeline(
   las = five_trees,                 # <--- DEFINE!
   method = "morse-smale",
-  input_truth = "PointID",          # <--- DEFINE!
+  input_truth = "pointID",          # <--- DEFINE!
   alpha = 0.1,
   stem_height = 0.5,
   density_cell = 1.0,    
@@ -136,7 +136,7 @@ tictoc::tic()
 res <- TTS_pipeline(
   las = five_trees,
   method = "morse-smale",
-  input_truth = "PointID",          # default: "pid" ~ LAS attribute of point IDs
+  input_truth = "pointID",          # default: "pid" ~ LAS attribute of point IDs
   alpha = 0.1,                      # default ~ alpha value for alpha hull 
   stem_height = 0.5,                # default ~ find seeds below this height (m) 
   density_cell = 1.0,               # default ~ cell size (m) for density grid
